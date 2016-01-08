@@ -1,18 +1,4 @@
 
-# Here we have the main function for fitting the regression model.
-
-# The main function for fitting a Hierachical Basis Expansion model.
-# This corresponds to the main penalized regression problem.
-# Args:
-#   x: A vector of dependent variables.
-#   y:
-#   nbasis: The number of basis functions. Default is length(y).
-#   max.lambda: The maximum lambda value for the penalized regression problem.
-#   nlam: Number of lambda values for fitting penalized regression.
-#   lam.min.ratio: The ratio of the largest and smallest lambda value.
-#   m: The order of smoothness, usually not more than 4.
-# Returns:
-
 #' Nonparametric regression using hierarchical basis functions
 #'
 #' One of the main functions of the \code{HierBasis} package. This function
@@ -45,7 +31,7 @@
 #' \item{lambdas}{The sequence of lambda values used for
 #' fitting the different models.}
 #' \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
-#' \item{k}{The m value used for defining 'order' of smoothness.}
+#' \item{k}{The k value used for defining 'order' of smoothness.}
 #' \item{x.mat}{The deisgn matrix used in the main optimization probelm. This is
 #' obtained by centering and then orthogonolizeing the simple matrix of
 #' \code{cbind(x, x^2, x^3, ..., x^nbasis)}.}
@@ -83,8 +69,8 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   qr.obj <- qr(design.mat.centered)
   x.mat <- qr.Q(qr.obj) * sqrt(n)
   # Note that for a orthogonal design the two problems are equivalent:
-  # (1/2)*|Y - X %*% beta|^2 + lambda * Pen(beta),
-  # (1/2)*|t(X) %*% Y/n - beta|^2 + (lambda/n) * Pen(beta).
+  # (1/2n)*|Y - X %*% beta|^2 + lambda * Pen(beta),
+  # (1/2)*|t(X) %*% Y/n - beta|^2 + (lambda) * Pen(beta).
 
   # Thus all we need, is to solve the proximal problem.
   # Define v = t(X) %*% Y/n for the prox problem.
@@ -94,12 +80,12 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   # sum_{k = 1}^{K} a_k * || beta[k:K] ||,
   # where K = nbasis.
   # We now evaluate the weights a_k:
-  ak <- (1:nbasis)^m - (0:(nbasis - 1))^m
+  ak <- (1:nbasis)^k - (0:(nbasis - 1))^k
 
   # If a maximum value for lambda is not provided we then evaluate a
   # maximum lambda value based on a non-tight bound.
   if(is.null(max.lambda)) {
-    max.lambda <- max((abs(v) * n) / ak)
+    max.lambda <- max(abs(v) / ak)
   }
 
   # Generate sequence of lambda values.
@@ -109,7 +95,7 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
 
   # Now we find the estimates parameter vector beta for each lambda.
   beta.hat <- sapply(lambdas, FUN = function(lam) {
-    GetProx(v, (lam/n) * ak)
+    GetProx(v, lam * ak)
   })
 
   # Get size of active set.
@@ -130,7 +116,7 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   result$y <- y
   result$x <- x
   result$lambdas <- lambdas
-  result$m <- m
+  result$k <- k
   result$x.mat <- x.mat
   result$nbasis <- nbasis
   result$active <- active.set
@@ -191,9 +177,9 @@ GetDoF.HierBasis <- function(hier.basis, lam.index = NULL) {
   x.mat <- hier.basis$x.mat
 
   # Get weights ak.
-  m <- hier.basis$m
+  k <- hier.basis$k
   nbasis <- hier.basis$nbasis
-  ak <- (1:nbasis)^m - (0:(nbasis - 1))^m
+  ak <- (1:nbasis)^k - (0:(nbasis - 1))^k
 
   # Get the sequence of lambda values.
   lambdas <- hier.basis$lambdas
