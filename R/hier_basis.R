@@ -52,20 +52,19 @@
 #' x + y
 HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
                      nlam = 50, lam.min.ratio = 1e-4, k = 3) {
+  require(Matrix)
   # We first evaluate the sample size.
   n <- length(y)
 
   # Create simple matrix of polynomial basis.
-  design.mat <- lapply(1:(nbasis), function(i) {x^i})
-  design.mat <- do.call(cbind, design.mat)
-
+  design.mat <- sapply(1:(nbasis), function(i) {x^i})
 
   xbar <- apply(design.mat, 2, mean)
-  design.mat.centered <- scale(design.mat, scale = FALSE)
+  design.mat.centered <- as(scale(design.mat, scale = FALSE), "dgCMatrix")
 
   ybar <- mean(y)
   y.centered <- y - ybar
-
+  
   qr.obj <- qr(design.mat.centered)
   x.mat <- qr.Q(qr.obj) * sqrt(n)
   # Note that for a orthogonal design the two problems are equivalent:
@@ -74,7 +73,7 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
 
   # Thus all we need, is to solve the proximal problem.
   # Define v = t(X) %*% Y/n for the prox problem.
-  v <- crossprod(x.mat, y.centered/n)
+  v <- as.vector(crossprod(x.mat, y.centered/n))
 
   # Now we note that our penalty is given by
   # sum_{k = 1}^{K} a_k * || beta[k:K] ||,
@@ -82,6 +81,8 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   # We now evaluate the weights a_k:
   ak <- (1:nbasis)^k - (0:(nbasis - 1))^k
 
+  
+  
   # If a maximum value for lambda is not provided we then evaluate a
   # maximum lambda value based on a non-tight bound.
   if(is.null(max.lambda)) {
@@ -93,11 +94,22 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
          log10(max.lambda * lam.min.ratio),
          length = nlam)
 
-  # Now we find the estimates parameter vector beta for each lambda.
-  beta.hat <- sapply(lambdas, FUN = function(lam) {
-    GetProx(v, lam * ak)
+  # Generate matrix of weights.
+  weights <- sapply(lambdas, FUN = function(lam) {
+    lam * ak
   })
-
+  
+  # Now we find the estimates parameter vector beta for each lambda.
+  beta.hat <-  GetProx(v, weights)
+  
+  # Now we put everything back on the original scale.
+  R.mat <- qrR(qr.obj) / sqrt(n)
+  
+  beta.hat2 <- solve(R.mat, beta.hat)
+  
+  # Now we simply find the intercepts for each fitted model.
+  intercept <- as.vector(ybar - xbar %*% beta.hat2)
+  
   # Get size of active set.
   active.set <- apply(beta.hat, 2, function(x) {
     length(which(x != 0))
@@ -105,71 +117,31 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
 
   # We also evaluate the predicted values.
   y.hat <- sapply(1:nlam, FUN  = function(i) {
-    fit <- x.mat %*% beta.hat[, i] + ybar
-    fit
+    x.mat %*% beta.hat[, i] + ybar
   })
 
   # Return the object for
   result <- list()
-  result$beta <- beta.hat
+  result$intercept <- intercept
+  result$beta <- beta.hat2
   result$fitted.values <- y.hat
   result$y <- y
   result$x <- x
   result$lambdas <- lambdas
   result$k <- k
-  result$x.mat <- x.mat
   result$nbasis <- nbasis
   result$active <- active.set
   result$xbar <- xbar
   result$ybar <- ybar
-  result$qr.obj <- qr.obj
   class(result) <- "HierBasis"
 
   return(result)
 }
 
 
-# The S3 method for extracting the coefficients of the fitted model.
-# The idea here is that this should return the coefficients on the original
-# scale. This function uses the 'backsolve' function for solving the
-# upper.triangular system.
-#
-# Args:
-#   object: An object of class HierBasis.
-#   ...: Additional arguments to be passed to the function.
-# Returns:
-#   beta: An nbasis * nlam matrix of coefficients of the fitted model.
-#   intercept: A vector of length nlam, for the intercept term of each fitted model.
-coef.HierBasis <- function(object, ...) {
-  # Recall that on the original scale we have an X matrix.
-  # We then center to get X_c and then we find X_c = Q * R.
-  # Thus the estimated beta from the main fit is given by
-  # beta.hat = R * beta.hat.original.
-  #
-  # Hence all we need is to solve for x, R * x = beta.hat.
-  # And then 'uncenter' to find the intercept terms.
-
-  # First we find the R matrix in the qr Decomposition.
-  R.mat <- qr.R(object$qr.obj) / sqrt(length(object$y))
-
-  # Now we solve the linear system for each fitted beta.hat.
-  beta <- apply(object$beta, 2, function(x) {
-    backsolve(R.mat, x)
-  })
-
-  # Now we simply find the intercepts for each fitted model.
-  intercept <- apply(beta, 2, function(vec) {
-    object$ybar - sum(object$xbar * vec)
-  })
-
-  # Return list of objects.
-  return(list("beta" = beta,
-         "intercept" = intercept))
-}
-
-
 # This function evaluates the Degrees of Freedom for the different fitted
 # models which are described by the object hier.basis.
+
 GetDoF.HierBasis <- function(hier.basis, lam.index = NULL) {
   # Obtain the sample size.
   n <- length(hier.basis$y)
@@ -296,40 +268,4 @@ predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
 
 
 }
-
-
-
-# A different simulation function. Here we wish to plot the
-# the MSE as a function of degrees of freedom.
-#
-# Args:
-#   dat: A data set from the function GenerateData.
-#   ...: Other arguments to be passed onto the function HierBasis.
-#
-# Returns:
-#   mse: The optimal MSE value on the validation set.
-#   dof: The corresponding Dof estimated by the unbiased estimator.
-
-SimHierBasis <- function(dat, ...) {
-
-  # Fit object.
-  hier.basis <- HierBasis(dat$x, dat$y,  ...)
-
-  # Get fitted values on test set.
-  fits.test <- predict.HierBasis(hier.basis, new.x = dat$x.test)
-  # Obtain the MSE and dof.
-  mse <- GetMSE(dat$y.test, fits.test)
-
-  # Obtain the best index value.
-  ind <- which.min(mse)[1]
-  mse.val <- mean((dat$y.val - fits.test[, ind])^2)
-  mse.true <- mean((dat$f0 - hier.basis$fitted.values[, ind])^2)
-  dof <- GetDoF.HierBasis(hier.basis, lam.index = ind)
-
-  return(list("mse.val" = mse.val,
-              "mse.true" = mse.true,
-              "dof" = dof))
-}
-
-
 
