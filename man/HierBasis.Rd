@@ -35,7 +35,7 @@ An object of class hier.basis with the following elements:
 \item{lambdas}{The sequence of lambda values used for
 fitting the different models.}
 \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
-\item{k}{The m value used for defining 'order' of smoothness.}
+\item{k}{The k value used for defining 'order' of smoothness.}
 \item{x.mat}{The deisgn matrix used in the main optimization probelm. This is
 obtained by centering and then orthogonolizeing the simple matrix of
 \code{cbind(x, x^2, x^3, ..., x^nbasis)}.}
@@ -61,8 +61,42 @@ Finally, the weights \eqn{a_{j,k}} are given by
 For details see Haris et al. (2015).
 }
 \examples{
-x <- 1
-y <- 2
-x + y
+require(Matrix)
+
+set.seed(1)
+
+# Generate the points x.
+n <- 300
+x <- (1:300)/300
+
+# A simple quadratic function.
+y1 <- 5 * (x - 0.5)^2
+y1dat <- y1 + rnorm(n, sd = 0.1)
+
+# A sine wave example.
+y2 <- - sin(10 * x - 4)
+y2dat <- y2 + rnorm(n, sd = 0.2)
+
+# An exponential function.
+y3 <- exp(- 5 * x + 0.5)
+y3dat <- y3 + rnorm(n, sd = 0.2)
+
+poly.fit <- HierBasis(x, y1dat)
+sine.fit <- HierBasis(x, y2dat)
+exp.fit  <- HierBasis(x, y3dat)
+
+\dontrun{
+plot(x, y1dat, type = "p", ylab = "y1")
+lines(x, y1, lwd = 2)
+lines(x, poly.fit$fitted.values[,30], col = "red", lwd = 2)
+
+plot(x, y2dat, type = "p", ylab = "y1")
+lines(x, y2, lwd = 2)
+lines(x, sine.fit$fitted.values[,40], col = "red", lwd = 2)
+
+plot(x, y3dat, type = "p", ylab = "y1")
+lines(x, y3, lwd = 2)
+lines(x, exp.fit$fitted.values[,40], col = "red", lwd = 2)
+}
 }
 
