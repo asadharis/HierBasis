@@ -1,6 +1,12 @@
 
 #' Nonparametric Regression using Hierarchical Basis Functions
 #'
+#' The main function for univariate non-parametric regression via the
+#' HierBasis estimator.
+#'
+#'
+#' @details
+#'
 #' One of the main functions of the \code{HierBasis} package. This function
 #' fit a univariate nonparametric regression model. This is achieved by
 #' minimizing the following function of \eqn{\beta}:
@@ -32,17 +38,12 @@
 #' fitting the different models.}
 #' \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
 #' \item{k}{The k value used for defining 'order' of smoothness.}
-#' \item{x.mat}{The deisgn matrix used in the main optimization probelm. This is
-#' obtained by centering and then orthogonolizeing the simple matrix of
-#' \code{cbind(x, x^2, x^3, ..., x^nbasis)}.}
 #' \item{nbasis}{The maximum number of basis functions we
 #' allowed the method to fit.}
 #' \item{active}{The vector of length nlam. Giving the size of the active set.
 #' Since we are now centering there is no intercept term.}
 #' \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 #' \item{ybar}{The mean of the vector y.}
-#' \item{qr.obj}{The qr object. For internal use ONLY! This is only passed for
-#' computations in the coef.HierBasis function.}
 #'
 #' @export
 #'
@@ -169,27 +170,21 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   result$active <- active.set
   result$xbar <- xbar
   result$ybar <- ybar
+  result$call <- match.call()
   class(result) <- "HierBasis"
 
   return(result)
 }
 
+print.HierBasis <- function(x, digits = 3, ...) {
+  cat("\nCall: ", deparse(x$call), "\n\n")
+  print(cbind(Lambda = signif(x$lambdas, digits),
+              Deg.of.Poly = x$active))
+}
 
-
-# This function gives predictions for the curve at the points
-# defined in new.x via linear interpolation.
-#
-# Args:
-#   object: An object of class HierBasis
-#   new.x: A vector of x values we wish to fit the data at. This should be
-#          within the range of the training data.
-#   interpolate: A logical indicator of if we wish to use linear interpolation
-#                for estimation of fitted values. This becomes useful for high dof
-#                when the estimation of betas on the original scale becomes unstable.
-# Returns:
-#   matrix: With length(new.x) rows and no. of cols is equal to number of lambda
-#           values used.
 #' Model Predictions for HierBasis
+#'
+#' The generic S3 method for predictions for objects of class \code{HierBasis}.
 #'
 #' @param object A fitted object of class '\code{HierBasis}'.
 #' @param new.x An optional vector of x values we wish to fit the fitted
@@ -201,6 +196,22 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
 #'                    estimation of betas on the original scale becomes unstable.
 #' @param ... Not used. Other arguments to predict.
 #'
+#' @details
+#' This function returns a matrix of  predicted values at the specified
+#' values of x given by \code{new.x}. Each column corresponds to a lambda value
+#' used for fitting the original model.
+#'
+#' If \code{new.x == NULL} then this function simply returns
+#' the fitted values of the estimated function at the original x values used for
+#' model fitting. The predicted values are presented for each lambda values.
+#'
+#' The function also has an option of making predictions
+#' via linear interpolation. If \code{TRUE}, a predicted value is equal to the
+#' fitted values if \code{new.x} is an x value used for model fitting. For a
+#' value between two x values used for model fitting, this simply returns the
+#' value of a linear interpolation of the two fitted values.
+#'
+#'
 #' @return
 #'
 #' \item{fitted.values}{A matrix with \code{length(new.x)} rows and
@@ -209,6 +220,28 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
 #' @export
 #'
 #' @examples
+#' #' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 300
+#' x <- (1:300)/300
+#'
+#' # A simple quadratic function.
+#' y1 <- 5 * (x - 0.5)^2
+#' y1dat <- y1 + rnorm(n, sd = 0.1)
+#'
+#'
+#' poly.fit <- HierBasis(x, y1dat)
+#' predict.poly <- predict(poly.fit, new.x = (1:80)/80)
+#'
+#' \dontrun{
+#' plot(x, y1dat, type = "p", ylab = "y1")
+#' lines(x, y1, lwd = 2)
+#' lines((1:80)/80, predict.poly[,30], col = "red", lwd = 2)
+#' }
+
 predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
   nlam <- length(object$lambdas)  # Number of lambdas.
 
@@ -283,10 +316,7 @@ predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
 #' lines(x, poly.fit$fitted.values[, ind], col = "red", lwd = 2)
 #' }
 #'
-#'
-#'
-#'
-#'
+
 GetDoF.HierBasis <- function(object, lam.index = NULL) {
   # We begin with evaluating the design matrix as we do in the main function.
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/hier_basis.R
 \name{HierBasis}
 \alias{HierBasis}
-\title{Nonparametric regression using hierarchical basis functions}
+\title{Nonparametric Regression using Hierarchical Basis Functions}
 \usage{
 HierBasis(x, y, nbasis = length(y), max.lambda = NULL, nlam = 50,
   lam.min.ratio = 1e-04, k = 3)
@@ -36,19 +36,18 @@ An object of class hier.basis with the following elements:
 fitting the different models.}
 \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
 \item{k}{The k value used for defining 'order' of smoothness.}
-\item{x.mat}{The deisgn matrix used in the main optimization probelm. This is
-obtained by centering and then orthogonolizeing the simple matrix of
-\code{cbind(x, x^2, x^3, ..., x^nbasis)}.}
 \item{nbasis}{The maximum number of basis functions we
 allowed the method to fit.}
 \item{active}{The vector of length nlam. Giving the size of the active set.
 Since we are now centering there is no intercept term.}
 \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 \item{ybar}{The mean of the vector y.}
-\item{qr.obj}{The qr object. For internal use ONLY! This is only passed for
-computations in the coef.HierBasis function.}
 }
 \description{
+The main function for univariate non-parametric regression via the
+HierBasis estimator.
+}
+\details{
 One of the main functions of the \code{HierBasis} package. This function
 fit a univariate nonparametric regression model. This is achieved by
 minimizing the following function of \eqn{\beta}:

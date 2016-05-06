@@ -1,9 +1,5 @@
 # The main file for functions for additive hierBasis
 
-#Rcpp::sourceCpp('helper_functions.cpp')
-#source('helper_functions.R')
-
-
 
 # The main function for an additive HierBasis
 AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
