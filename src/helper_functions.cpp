@@ -104,7 +104,7 @@ arma::vec GetProxOne(arma::vec y,
 
 
 // [[Rcpp::export]]
-arma::field<arma::sp_mat> FitAdditive(arma::vec y,
+arma::sp_mat FitAdditive(arma::vec y,
                                 arma::mat weights,
                                 arma::mat x_beta,
                                 NumericVector x,
@@ -115,11 +115,11 @@ arma::field<arma::sp_mat> FitAdditive(arma::vec y,
   IntegerVector dimX = x.attr("dim");
   arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
 
-  // The function will return a beta_ans list.
-  // Each element corresponds to a lambda value and is a sparse matrix.
-  // This is done for improved memory efficiency.
-  arma::field<sp_mat> beta_ans(nlam, 1);
 
+  // NEED TO EDIT THIS!!!!!!!
+  // Turns our WE DONT NEED THIS. WE CAN VECTORIZE AND MAK
+  // ONE BIG SPARSE MATRIX
+  arma::sp_mat beta_ans(p * J, nlam);
 
 
   // Initialize some vectors and matrices.
@@ -128,8 +128,11 @@ arma::field<arma::sp_mat> FitAdditive(arma::vec y,
   arma::vec temp_v;
   arma::vec temp_beta_j;
 
+  arma::vec temp_vec_beta;
+
   double temp_norm_old;
   double change;
+
 
   // Begin main loop for each vector of weights given.
   for(int i = 0; i < nlam; i++) {
@@ -153,12 +156,15 @@ arma::field<arma::sp_mat> FitAdditive(arma::vec y,
         // Update the vector x_beta (X_j\beta_j).
         x_beta.col(j) = X.slice(j) * temp_beta_j;
       }
+
+      temp_vec_beta = vectorise(old_beta);
+
       // Obtain the value of the relative change.
-      temp_norm_old = norm(vectorise(old_beta));
-      change = norm(vectorise(beta)) - temp_norm_old;
+      temp_norm_old = norm(temp_vec_beta);
+      change = norm(temp_vec_beta) - temp_norm_old;
       // cout << i << "  " << counter<< "  " << fabs(as_scalar(change)) << "\n";
       if(fabs(change) < tol) {
-        beta_ans(i, 0) = beta;
+        beta_ans.col(i) = vectorise(beta);
         converged = true;
       } else {
         counter = counter + 1;
@@ -174,22 +180,21 @@ arma::field<arma::sp_mat> FitAdditive(arma::vec y,
 
   return beta_ans;
 }
-//
-// //
-// //
-// //
 
 
 
-//
+
 // // [[Rcpp::export]]
-// arma::vec testf(){
-//   mat A(5,6);
+// arma::sp_mat testf(){
+//   sp_mat A(9,3);
+//   mat B(3,3);
 //
-//   A = randn(5,6);
+//   B = randn(3,3);
+//   arma::vec C = vectorise(B);
+//   C.subvec(1, 2) = zeros(2);
 //
-//   arma::vec F = vectorise(A);
+//   A.col(0) = C;
 //
-//   return F;
+//   return A;
 // }
-//
+

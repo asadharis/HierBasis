@@ -13,6 +13,9 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
 
   # Each slice of array has the orthogonal design for each feature.
   design.array <- array(NA, dim = c(n, J, p))
+  # Another array to store the R matrices of the QR decomposition.
+  r.matrices <- Matrix(0, nrow = J, ncol = J * p)
+
   # The matrix of xbar values so we know what values to center by.
   xbar <- matrix(NA, ncol = p, nrow = J)
 
@@ -25,6 +28,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
     design.mat.centered <- scale(design.mat, scale = FALSE)
     qr.obj <- qr(design.mat.centered)
     design.array[, , j] <- qr.Q(qr.obj) * sqrt(n)
+    r.matrices[, (J * (j - 1) + 1):(J * j) ] <- qr.R(qr.obj) / sqrt(n)
   }
 
   if(is.null(beta.mat)) {
@@ -51,17 +55,32 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
 
   mod <- FitAdditive(y - mean(y), weights, x.beta, design.array,
                      beta.mat, tol, p, J, n, nlam, max.iter)
-  mod2 <- as.array(mod, dim = c(length(mod), dim(mod[[1]])))
-  yhats <- sapply(1:nlam, function(l) rowSums(GetFitted(mod[ , , l], design.array)))
 
+  # Obtain the fitted values for each lambda value.
+  yhats <- crossprod(apply(design.array, 1, cbind), mod)
 
+  beta2 <- mod
+  for(j in 1:p) {
+    beta2[(J * (j - 1) + 1):(J * j), ] <-
+      backsolve(r.matrices[, (J * (j - 1) + 1):(J * j)],
+                mod[(J * (j - 1) + 1):(J * j), ])
+  }
 
-  return(list("beta" = mod,
-              #"xmat" = design.array,
-              "x" = x,
-              "yhats" = yhats,
-              "xbar" = xbar,
-              "lam" = lambdas))
+  # Obtain intercepts for model.
+  intercept <- as.vector(ybar - (as.vector(xbar) %*% beta2))
+
+  # Finally, we return an addHierbasis object.
+  result <- list("beta" = beta2,
+                 "intercept" = intercept,
+                 "y" = y,
+                 "x" = x,
+                 "nbasis" = nbasis,
+                 "fitted.values" = yhats,
+                 "ybar" = ybar,
+                 "xbar" = xbar,
+                 "lam" = lambdas)
+  class(result) <- "addHierBasis"
+  return(result)
 }
 
 

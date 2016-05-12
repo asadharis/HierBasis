@@ -31,7 +31,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // FitAdditive
-arma::field<arma::sp_mat> FitAdditive(arma::vec y, arma::mat weights, arma::mat x_beta, NumericVector x, arma::mat beta, double tol, int p, int J, int n, int nlam, double max_iter);
+arma::sp_mat FitAdditive(arma::vec y, arma::mat weights, arma::mat x_beta, NumericVector x, arma::mat beta, double tol, int p, int J, int n, int nlam, double max_iter);
 RcppExport SEXP HierBasis_FitAdditive(SEXP ySEXP, SEXP weightsSEXP, SEXP x_betaSEXP, SEXP xSEXP, SEXP betaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
