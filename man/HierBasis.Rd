@@ -5,7 +5,7 @@
 \title{Nonparametric Regression using Hierarchical Basis Functions}
 \usage{
 HierBasis(x, y, nbasis = length(y), max.lambda = NULL, nlam = 50,
-  lam.min.ratio = 1e-04, k = 3)
+  lam.min.ratio = 1e-04, m.const = 3)
 }
 \arguments{
 \item{x}{A vector of dependent variables.}
@@ -25,7 +25,7 @@ rangeing from \code{max.lambda} to \code{max.lambda * lam.min.ratio}.}
 
 \item{lam.min.ratio}{The ratio of the largest and smallest lambda value.}
 
-\item{k}{The order of smoothness, usually not more than 3 (default).}
+\item{m.const}{The order of smoothness, usually not more than 3 (default).}
 }
 \value{
 An object of class hier.basis with the following elements:
@@ -35,7 +35,7 @@ An object of class hier.basis with the following elements:
 \item{lambdas}{The sequence of lambda values used for
 fitting the different models.}
 \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
-\item{k}{The k value used for defining 'order' of smoothness.}
+\item{m.const}{The \code{m.const} value used for defining 'order' of smoothness.}
 \item{nbasis}{The maximum number of basis functions we
 allowed the method to fit.}
 \item{active}{The vector of length nlam. Giving the size of the active set.
@@ -51,12 +51,12 @@ HierBasis estimator.
 One of the main functions of the \code{HierBasis} package. This function
 fit a univariate nonparametric regression model. This is achieved by
 minimizing the following function of \eqn{\beta}:
-\deqn{minimize_{\beta} (1/2n)||y - \Psi \beta||^2 + \lambda\Omega_k(\beta) ,}
+\deqn{minimize_{\beta} (1/2n)||y - \Psi \beta||^2 + \lambda\Omega_m(\beta) ,}
 where \eqn{\beta} is a vector of length \eqn{J = } \code{nbasis}.
-The penalty function \eqn{\Omega} is given by \deqn{\sum a_{j,k}\beta[j:J],}
+The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
 where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta}.
-Finally, the weights \eqn{a_{j,k}} are given by
-\deqn{a_{j,k} = j^k - (j-1)^k,} where \eqn{k} denotes the smoothness level.
+Finally, the weights \eqn{a_{j,m}} are given by
+\deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
 For details see Haris et al. (2015).
 }
 \examples{
