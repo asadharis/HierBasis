@@ -188,6 +188,117 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
   return(result)
 }
 
+#' Print the coefficients of fitted models.
+#'
+#' @param x A fitted model, an object of class \code{addHierBasis}.
+#' @param lam.index Specify the lambda indices to view.
+#'                  If NULL then all lambda values are shown.
+#' @param digits The significant figures printed.
+#' @param ... Not used, extra arguments to print.
+#'
+#' @export
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{AdditiveHierBasis}},
+#' \code{\link{view.model.addHierBasis}}
+#'
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 100
+#' p <- 30
+#'
+#' x <- matrix(rnorm(n*p), ncol = p)
+#'
+#' # A simple model with 3 non-zero functions.
+#' y <- rnorm(n, sd = 0.1) + sin(x[, 1]) + x[, 2] + (x[, 3])^3
+#'
+#' mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30)
+#' print(mod, lam.index = 30)
+#' }
+#'
+print.addHierBasis <- function(x, lam.index = NULL, digits = 3, ...) {
+
+  cat("\nCall: ", deparse(x$call), "\n\n")
+
+  if(is.null(lam.index)) {
+    ans <- sapply(1:length(x$lam), function(i){
+      signif(Matrix(x$beta[, i], ncol = ncol(x$x)), digits)
+    })
+  } else {
+    ans <- sapply(lam.index, function(i){
+      signif(Matrix(x$beta[, i], ncol = ncol(x$x)), digits)
+    })
+  }
+  print(ans)
+}
+
+
+#' View Fitted Additive Model
+#'
+#' This function prints a list of size \code{p} where \code{p} is the number of
+#' covariates. Each element in the list is a vector of strings showing the polynomial
+#' representation of each individual component function.
+#'
+#' @param object An object of class \code{addHierBasis}.
+#' @param lam.index The index of the \code{lambda} value to view.
+#' @param digits The significant figures printed.
+#'
+#' @export
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{AdditiveHierBasis}}, \code{\link{print.addHierBasis}}
+#' @examples
+#' \dontrun{
+#' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 100
+#' p <- 30
+#'
+#' x <- matrix(rnorm(n*p), ncol = p)
+#'
+#' # A simple model with 3 non-zero functions.
+#' y <- rnorm(n, sd = 0.1) + sin(x[, 1]) + x[, 2] + (x[, 3])^3
+#'
+#' mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30)
+#' view.model.addHierBasis(mod, 30)
+#' }
+view.model.addHierBasis <- function(object, lam.index = 1, digits = 3) {
+
+  # Begin by obtaining the coefficient matrix.
+  temp.beta <- signif(Matrix(object$beta[, lam.index],
+                             ncol = ncol(object$x)), digits)
+
+  sapply(1:ncol(object$x), function(j) {
+    temp <- temp.beta[, j]
+    nonzero <- which(temp!=0)
+    poly.deg <- length(nonzero)
+    if(poly.deg != 0) {
+      paste0(temp[1:poly.deg],"x^",1:poly.deg)
+    } else {
+      "zero function"
+    }
+
+  })
+}
+
 
 #' Model Predictions for Additive HierBasis
 #'
@@ -355,8 +466,7 @@ plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
   f.hat <- design.mat %*%
     object$beta[(J * (ind.func - 1) + 1):(J * ind.func), ind.lam]
   lin.inter <- approx(x.temp, f.hat)
-  plot(lin.inter$x, lin.inter$y, ...)
-
+  plot(lin.inter$x, lin.inter$y - mean(lin.inter$y), ...)
 
 }
 
