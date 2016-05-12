@@ -134,6 +134,7 @@ arma::sp_mat FitAdditive(arma::vec y,
   double change;
 
 
+
   // Begin main loop for each vector of weights given.
   for(int i = 0; i < nlam; i++) {
 
@@ -161,13 +162,14 @@ arma::sp_mat FitAdditive(arma::vec y,
 
       // Obtain the value of the relative change.
       temp_norm_old = norm(temp_vec_beta);
-      change = norm(temp_vec_beta) - temp_norm_old;
+      change = norm(vectorise(beta)) - temp_norm_old;
 
       if(fabs(change) < tol) {
         beta_ans.col(i) = vectorise(beta);
         converged = true;
       } else {
         counter = counter + 1;
+
         if(counter == max_iter) {
           Function warning("warning");
           warning("Function did not converge");

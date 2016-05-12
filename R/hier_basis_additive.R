@@ -1,11 +1,113 @@
-# The main file for functions for additive hierBasis
 
-# The main function for an additive HierBasis
+#' Estimating Sparse Additive Models
+#'
+#' The main function for fitting sparse additive models via the additive
+#' HierBasis estimator
+#'
+#' @details
+#' This function
+#' fits an additive nonparametric regression model. This is achieved by
+#' minimizing the following function of \eqn{\beta}:
+#' \deqn{minimize_{\beta_1,\ldots, \beta_p}
+#' (1/2n)||y - \sum_{l=1}^p \Psi_l \beta_l||^2 +
+#' \sum_{l = 1}^p\left[(1 - \alpha)\|\beta_l\|_2 + \alpha\Omega_m(\beta_l)\right] ,}
+#' where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis}.
+#' The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
+#' where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta}.
+#' Finally, the weights \eqn{a_{j,m}} are given by
+#' \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
+#' For details see Haris et al. (2016).
+#'
+#' @param x An \eqn{n\times p} matrix of covariates.
+#' @param y The response vector size \eqn{n}.
+#' @param nbasis The maximum number of basis functions.
+#' @param max.lambda The largest lambda value used for model fitting.
+#' @param lam.min.ratio The ratio of smallest and largest lambda values.
+#' @param nlam The number of lambda values.
+#' @param beta.mat An initial estimate of the parameter beta, a
+#' \code{ncol(x)}-by-\code{nbasis} matrix. If NULL (default), the inital estimate
+#' is the zero matrix.
+#' @param alpha The scaler between 0 and 1 controlling the balance between
+#' the sparsity penalty and the hierarchical penalty. Default is 0.5.
+#' @param m.const The order of smoothness, usually not more than 3 (default).
+#' @param max.iter Maximum number of iterations for block coordinate descent.
+#' @param tol Tolerance for block coordinate descent, stopping precision.
+#'
+#' @return
+#' An object of class addHierBasis with the following elements:
+#'
+#' \item{beta}{The \code{(nbasis * p) x nlam} matrix of estimated beta vectors.}
+#' \item{intercept}{The vector of size \code{nlam} of estimated intercepts.}
+#' \item{fitted.values}{The \code{n x nlam} matrix of fitted values.}
+#' \item{lambdas}{The sequence of lambda values used for
+#' fitting the different models.}
+#' \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
+#' \item{m.const}{The \code{m.const} value used for defining 'order' of smoothness.}
+#' \item{nbasis}{The maximum number of basis functions
+#' used for additive HierBasis.}
+#' \item{xbar}{The \code{nbasis x p} matrix of means of the full design matrix.}
+#' \item{ybar}{The mean of the vector y.}
+#'
+#' @export
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{predict.addHierBasis}}, \code{\link{plot.addHierBasis}}
+#'
+#' @examples
+#' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 100
+#' p <- 30
+#'
+#' x <- matrix(rnorm(n*p), ncol = p)
+#'
+#' # A simple model with 3 non-zero functions.
+#' y <- rnorm(n, sd = 0.1) + sin(x[, 1]) + x[, 2] + (x[, 3])^3
+#'
+#' mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30,
+#'                          beta.mat = NULL,
+#'                          nlam = 50, alpha = 0.5,
+#'                          lam.min.ratio = 1e-4, m.const = 3,
+#'                          max.iter = 300, tol = 1e-4)
+#'
+#' # Obtain predictions for new.x.
+#' preds <- predict(mod, new.x = matrix(rnorm(n*p), ncol = p))
+#'
+#' # Plot the individual functions.
+#' xs <- seq(-3,3,length = 300)
+#' plot(mod,1,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_1(x)",
+#'   main = "Estimating the Sine function")
+#' lines(xs, sin(xs), type = "l", lwd = 2)
+#' legend("topleft", c("Estimated Function", "True Function"),
+#'       col = c("red", "black"), lwd = 2, lty = 1)
+#'
+#' plot(mod,2,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_2(x)",
+#'   main = "Estimating the Linear function")
+#' lines(xs, xs, type = "l", lwd = 2)
+#' legend("topleft", c("Estimated Function", "True Function"),
+#'       col = c("red", "black"), lwd = 2, lty = 1)
+#'
+#' plot(mod,3,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_3(x)",
+#'      main = "Estimating the cubic polynomial")
+#' lines(xs, xs^3, type = "l", lwd = 2)
+#' legend("topleft", c("Estimated Function", "True Function"),
+#'        col = c("red", "black"), lwd = 2, lty = 1)
+#'
+#'
 AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
+                              lam.min.ratio = 1e-4, nlam = 50,
                               beta.mat = NULL,
-                              nlam = 50, alpha = 0.5,
-                              lam.min.ratio = 1e-4, m.const = 3,
+                              alpha = 0.5, m.const = 3,
                               max.iter = 100, tol = 1e-4) {
+
   # Initialize sample size and some other values.
   n <- length(y)
   p <- ncol(x)
@@ -87,16 +189,75 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
 }
 
 
-predict.addHierBasis <- function(object, newdata = NULL, ...) {
+#' Model Predictions for Additive HierBasis
+#'
+#' The generic S3 method for predictions for objects of
+#' class \code{addHierBasis}.
+#'
+#' @param object A fitted object of class '\code{addHierBasis}'.
+#' @param new.x An optional matrix of values of \code{x} at which to predict.
+#' The number of columns of \code{new.x} should be equal to the number of
+#' columns of \code{object$x}.
+#' @param ... Not used. Other arguments for predict function.
+#'
+#' @details
+#' This function returns a matrix of  predicted values at the specified
+#' values of x given by \code{new.x}. Each column corresponds to a lambda value
+#' used for fitting the original model.
+#'
+#' If \code{new.x == NULL} then this function simply returns
+#' the fitted values of the estimated function at the original x values used for
+#' model fitting. The predicted values are presented for each lambda values.
+#'
+#' @return
+#' \item{fitted.values}{A matrix of fitted values with \code{nrow(new.x)}
+#'                      rows and \code{nlam} columns}
+#' @export
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{AdditiveHierBasis}}, \code{\link{plot.addHierBasis}}
+#'
+#' @examples
+#'
+#' library(HierBasis)
+#' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 100
+#' p <- 30
+#'
+#' x <- matrix(rnorm(n*p), ncol = p)
+#'
+#' # A simple model with 3 non-zero functions.
+#' y <- rnorm(n, sd = 0.1) + sin(x[, 1]) + x[, 2] + (x[, 3])^3
+#'
+#' mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30,
+#'                          beta.mat = NULL,
+#'                          nlam = 50, alpha = 0.5,
+#'                          lam.min.ratio = 1e-4, m.const = 3,
+#'                          max.iter = 300, tol = 1e-4)
+#'
+#' # Obtain predictions for new.x.
+#' preds <- predict(mod, new.x = matrix(rnorm(n*p), ncol = p))
+#'
+predict.addHierBasis <- function(object, new.x = NULL, ...) {
+
   # Initialize some variables.
-  if(is.null(newdata)) {
-    newdata <- object$x
+  if(is.null(new.x)) {
+    new.x <- object$x
   }
-  x <- newdata
+  x <- new.x
   nbasis <- object$nbasis
   p <- dim(object$x)[2]
   nlam <- dim(object$beta)[2]
-  n.new <- dim(newdata)[1]
+  n.new <- dim(new.x)[1]
   n <- dim(object$x)[1]
   J <- dim(object$xbar)[1]
 
@@ -104,7 +265,7 @@ predict.addHierBasis <- function(object, newdata = NULL, ...) {
   design.array <- array(NA, dim = c(n.new, J, p))
 
   for(j in 1:p) {
-    # print(j)
+
     design.mat <- lapply(1:(nbasis), function(i) {x[, j]^i})
     design.mat <- do.call(cbind, design.mat)
 
@@ -118,8 +279,73 @@ predict.addHierBasis <- function(object, newdata = NULL, ...) {
   t(apply(ans, 1, "+", object$intercept))
 }
 
-plot.addHierBasis <- function(object, ind.func = 1, ind.lam = 1, ...) {
+#' Plot function for \code{addHierBasis}
+#'
+#' This function plots individual component functions for a specified value of
+#' \code{lambda} for an object of class \code{addHierBasis}.
+#'
+#' @param x An object of class \code{addHierBasis}.
+#' @param ind.func The index of the component function to plot.
+#' @param ind.lam The index of the lambda value to plot.
+#' @param ... Other arguments passed on to function \code{plot}.
+#'
+#' @export
+#'
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{AdditiveHierBasis}}, \code{\link{predict.addHierBasis}}
+#' @examples
+#' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 100
+#' p <- 30
+#'
+#' x <- matrix(rnorm(n*p), ncol = p)
+#'
+#' # A simple model with 3 non-zero functions.
+#' y <- rnorm(n, sd = 0.1) + sin(x[, 1]) + x[, 2] + (x[, 3])^3
+#'
+#' mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30,
+#'                          beta.mat = NULL,
+#'                          nlam = 50, alpha = 0.5,
+#'                          lam.min.ratio = 1e-4, m.const = 3,
+#'                          max.iter = 300, tol = 1e-4)
+#'
+#' # Plot the individual functions.
+#' xs <- seq(-3,3,length = 300)
+#' plot(mod,1,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_1(x)",
+#'   main = "Estimating the Sine function")
+#' lines(xs, sin(xs), type = "l", lwd = 2)
+#' legend("topleft", c("Estimated Function", "True Function"),
+#'       col = c("red", "black"), lwd = 2, lty = 1)
+#'
+#' \dontrun{
+#' plot(mod,2,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_2(x)",
+#'   main = "Estimating the Linear function")
+#' lines(xs, xs, type = "l", lwd = 2)
+#' legend("topleft", c("Estimated Function", "True Function"),
+#'       col = c("red", "black"), lwd = 2, lty = 1)
+#'
+#' plot(mod,3,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_3(x)",
+#'      main = "Estimating the cubic polynomial")
+#' lines(xs, xs^3, type = "l", lwd = 2)
+#' legend("topleft", c("Estimated Function", "True Function"),
+#'        col = c("red", "black"), lwd = 2, lty = 1)
+#' }
+#'
+#'
+#'
+plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
 
+  object <- x
   x.temp <- object$x[, ind.func]
   J <- dim(object$xbar)[1]
 

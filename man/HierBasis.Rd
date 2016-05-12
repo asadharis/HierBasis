@@ -28,9 +28,10 @@ rangeing from \code{max.lambda} to \code{max.lambda * lam.min.ratio}.}
 \item{m.const}{The order of smoothness, usually not more than 3 (default).}
 }
 \value{
-An object of class hier.basis with the following elements:
+An object of class HierBasis with the following elements:
 
-\item{beta.hat}{The \code{nbasis * nlam} matrix of estimated beta vectors.}
+\item{beta}{The \code{nbasis * nlam} matrix of estimated beta vectors.}
+\item{intercept}{The vector of size \code{nlam} of estimated intercepts.}
 \item{fitted.values}{The \code{nbasis * nlam} matrix of fitted values.}
 \item{lambdas}{The sequence of lambda values used for
 fitting the different models.}
@@ -38,8 +39,7 @@ fitting the different models.}
 \item{m.const}{The \code{m.const} value used for defining 'order' of smoothness.}
 \item{nbasis}{The maximum number of basis functions we
 allowed the method to fit.}
-\item{active}{The vector of length nlam. Giving the size of the active set.
-Since we are now centering there is no intercept term.}
+\item{active}{The vector of length nlam. Giving the size of the active set.}
 \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 \item{ybar}{The mean of the vector y.}
 }
@@ -57,7 +57,7 @@ The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
 where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta}.
 Finally, the weights \eqn{a_{j,m}} are given by
 \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
-For details see Haris et al. (2015).
+For details see Haris et al. (2016).
 }
 \examples{
 require(Matrix)
@@ -97,5 +97,17 @@ plot(x, y3dat, type = "p", ylab = "y1")
 lines(x, y3, lwd = 2)
 lines(x, exp.fit$fitted.values[,40], col = "red", lwd = 2)
 }
+}
+\author{
+Asad Haris (\email{aharis@uw.edu}),
+Ali Shojaie and Noah Simon
+}
+\references{
+Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+by authors.
+}
+\seealso{
+\code{\link{predict.HierBasis}}, \code{\link{GetDoF.HierBasis}}
 }
 

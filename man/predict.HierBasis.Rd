@@ -18,7 +18,7 @@ linear interpolation for estimation of fitted values.
 This becomes useful for high dof when the
 estimation of betas on the original scale becomes unstable.}
 
-\item{...}{Not used. Other arguments to predict.}
+\item{...}{Not used. Other arguments for predict function.}
 }
 \value{
 \item{fitted.values}{A matrix with \code{length(new.x)} rows and
@@ -43,7 +43,7 @@ value between two x values used for model fitting, this simply returns the
 value of a linear interpolation of the two fitted values.
 }
 \examples{
-#' require(Matrix)
+require(Matrix)
 
 set.seed(1)
 
@@ -64,5 +64,17 @@ plot(x, y1dat, type = "p", ylab = "y1")
 lines(x, y1, lwd = 2)
 lines((1:80)/80, predict.poly[,30], col = "red", lwd = 2)
 }
+}
+\author{
+Asad Haris (\email{aharis@uw.edu}),
+Ali Shojaie and Noah Simon
+}
+\references{
+Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+by authors.
+}
+\seealso{
+\code{\link{HierBasis}}, \code{\link{GetDoF.HierBasis}}
 }
 

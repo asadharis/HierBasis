@@ -16,7 +16,7 @@
 #' where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta}.
 #' Finally, the weights \eqn{a_{j,m}} are given by
 #' \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
-#' For details see Haris et al. (2015).
+#' For details see Haris et al. (2016).
 #' @param x A vector of dependent variables.
 #' @param y A vector of response values we wish to fit the function to.
 #' @param nbasis The number of basis functions. Default is length(y).
@@ -30,9 +30,10 @@
 #' @param lam.min.ratio The ratio of the largest and smallest lambda value.
 #' @param m.const The order of smoothness, usually not more than 3 (default).
 #'
-#' @return   An object of class hier.basis with the following elements:
+#' @return   An object of class HierBasis with the following elements:
 #'
-#' \item{beta.hat}{The \code{nbasis * nlam} matrix of estimated beta vectors.}
+#' \item{beta}{The \code{nbasis * nlam} matrix of estimated beta vectors.}
+#' \item{intercept}{The vector of size \code{nlam} of estimated intercepts.}
 #' \item{fitted.values}{The \code{nbasis * nlam} matrix of fitted values.}
 #' \item{lambdas}{The sequence of lambda values used for
 #' fitting the different models.}
@@ -40,12 +41,20 @@
 #' \item{m.const}{The \code{m.const} value used for defining 'order' of smoothness.}
 #' \item{nbasis}{The maximum number of basis functions we
 #' allowed the method to fit.}
-#' \item{active}{The vector of length nlam. Giving the size of the active set.
-#' Since we are now centering there is no intercept term.}
+#' \item{active}{The vector of length nlam. Giving the size of the active set.}
 #' \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 #' \item{ybar}{The mean of the vector y.}
 #'
 #' @export
+#'
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{predict.HierBasis}}, \code{\link{GetDoF.HierBasis}}
 #'
 #' @examples
 #' require(Matrix)
@@ -88,7 +97,6 @@
 #'
 HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
                      nlam = 50, lam.min.ratio = 1e-4, m.const = 3) {
-  require(Matrix)
   # We first evaluate the sample size.
   n <- length(y)
 
@@ -194,7 +202,7 @@ print.HierBasis <- function(x, digits = 3, ...) {
 #'                    linear interpolation for estimation of fitted values.
 #'                    This becomes useful for high dof when the
 #'                    estimation of betas on the original scale becomes unstable.
-#' @param ... Not used. Other arguments to predict.
+#' @param ... Not used. Other arguments for predict function.
 #'
 #' @details
 #' This function returns a matrix of  predicted values at the specified
@@ -213,14 +221,21 @@ print.HierBasis <- function(x, digits = 3, ...) {
 #'
 #'
 #' @return
-#'
 #' \item{fitted.values}{A matrix with \code{length(new.x)} rows and
 #'                      \code{nlam} columns}
+#'
+#' @seealso \code{\link{HierBasis}}, \code{\link{GetDoF.HierBasis}}
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
 #'
 #' @export
 #'
 #' @examples
-#' #' require(Matrix)
+#' require(Matrix)
 #'
 #' set.seed(1)
 #'
@@ -292,7 +307,14 @@ predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
 #'             specified by \code{lam.index}. If no index is specified then
 #'             it returns a vector of length \code{object$nlam}.}
 #' @export
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
 #'
+#' @seealso \code{\link{HierBasis}}, \code{\link{predict.HierBasis}}
 #' @examples
 #' require(Matrix)
 #'
@@ -320,7 +342,6 @@ predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
 GetDoF.HierBasis <- function(object, lam.index = NULL) {
   # We begin with evaluating the design matrix as we do in the main function.
 
-  require(Matrix)
   # We first evaluate the sample size.
   n <- length(object$y)
 
