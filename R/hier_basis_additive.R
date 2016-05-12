@@ -9,16 +9,18 @@
 #' fits an additive nonparametric regression model. This is achieved by
 #' minimizing the following function of \eqn{\beta}:
 #' \deqn{minimize_{\beta_1,\ldots, \beta_p}
-#' (1/2n)||y - \sum_{l=1}^p \Psi_l \beta_l||^2 +
-#' \sum_{l = 1}^p\left[(1 - \alpha)\|\beta_l\|_2 + \alpha\Omega_m(\beta_l)\right] ,}
-#' where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis}.
+#' (1/2n)||y - \sum \Psi_l \beta_l||^2 +
+#' \sum (1 - \alpha) || \beta_l ||_2 + \alpha \Omega_m( \beta_l )  ,}
+#' where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis} and the summation is
+#' over the index \eqn{l}.
 #' The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
-#' where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta}.
+#' where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta} and the sum is
+#' over the index \eqn{j}.
 #' Finally, the weights \eqn{a_{j,m}} are given by
 #' \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
 #' For details see Haris et al. (2016).
 #'
-#' @param x An \eqn{n\times p} matrix of covariates.
+#' @param x An \eqn{n \times p}{n x p} matrix of covariates.
 #' @param y The response vector size \eqn{n}.
 #' @param nbasis The maximum number of basis functions.
 #' @param max.lambda The largest lambda value used for model fitting.
@@ -36,16 +38,18 @@
 #' @return
 #' An object of class addHierBasis with the following elements:
 #'
-#' \item{beta}{The \code{(nbasis * p) x nlam} matrix of estimated beta vectors.}
+#' \item{beta}{The \code{(nbasis * p)} \eqn{\times}{x} \code{nlam} matrix of
+#' estimated beta vectors.}
 #' \item{intercept}{The vector of size \code{nlam} of estimated intercepts.}
-#' \item{fitted.values}{The \code{n x nlam} matrix of fitted values.}
+#' \item{fitted.values}{The \code{n} \eqn{\times}{x} \code{nlam} matrix of fitted values.}
 #' \item{lambdas}{The sequence of lambda values used for
 #' fitting the different models.}
 #' \item{x, y}{The original \code{x} and \code{y} values used for estimation.}
 #' \item{m.const}{The \code{m.const} value used for defining 'order' of smoothness.}
 #' \item{nbasis}{The maximum number of basis functions
 #' used for additive HierBasis.}
-#' \item{xbar}{The \code{nbasis x p} matrix of means of the full design matrix.}
+#' \item{xbar}{The \code{nbasis} \eqn{\times}{x} \code{p} matrix of means
+#' of the full design matrix.}
 #' \item{ybar}{The mean of the vector y.}
 #'
 #' @export
