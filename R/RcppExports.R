@@ -5,3 +5,11 @@ GetProx <- function(y, weights) {
     .Call('HierBasis_GetProx', PACKAGE = 'HierBasis', y, weights)
 }
 
+GetProxOne <- function(y, weights) {
+    .Call('HierBasis_GetProxOne', PACKAGE = 'HierBasis', y, weights)
+}
+
+FitAdditive <- function(y, weights, x_beta, x, beta, tol, p, J, n, nlam, max_iter) {
+    .Call('HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, x_beta, x, beta, tol, p, J, n, nlam, max_iter)
+}
+

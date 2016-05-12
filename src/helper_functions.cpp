@@ -66,6 +66,7 @@ arma::sp_mat GetProx(arma::vec y,
   return beta;
 }
 
+// [[Rcpp::export]]
 arma::vec GetProxOne(arma::vec y,
                      arma::vec weights) {
   // This function evaluates the prox given by
@@ -81,7 +82,7 @@ arma::vec GetProxOne(arma::vec y,
   //    weights: The vector of weights used in the penalty function.
   // Returns:
   //    beta: The solution vector of the optimization problem.
-
+  //
   // Initialize the dimension of vector y.
   int p = y.size();
 
@@ -101,101 +102,94 @@ arma::vec GetProxOne(arma::vec y,
   return beta;
 }
 
+
+// [[Rcpp::export]]
+arma::field<arma::sp_mat> FitAdditive(arma::vec y,
+                                arma::mat weights,
+                                arma::mat x_beta,
+                                NumericVector x,
+                                arma::mat beta,
+                                double tol, int p, int J, int n,
+                                int nlam, double max_iter) {
+
+  IntegerVector dimX = x.attr("dim");
+  arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
+
+  // The function will return a beta_ans list.
+  // Each element corresponds to a lambda value and is a sparse matrix.
+  // This is done for improved memory efficiency.
+  arma::field<sp_mat> beta_ans(nlam, 1);
+
+
+
+  // Initialize some vectors and matrices.
+  arma::vec temp_weights;
+  arma::vec temp_y;
+  arma::vec temp_v;
+  arma::vec temp_beta_j;
+
+  double temp_norm_old;
+  double change;
+
+  // Begin main loop for each vector of weights given.
+  for(int i = 0; i < nlam; i++) {
+
+    temp_weights = weights.col(i) / n;
+    int  counter = 0;
+    bool converged = false;
+    while(counter < max_iter && !converged) {
+
+      // We will use this to check convergence.
+      arma::mat old_beta(beta.begin(), J, p, true);
+
+      // One loop of the block coordinate descent algorithm.
+      for(int j = 0; j < p; j++) {
+        temp_y = y - sum(x_beta, 1) + (X.slice(j) * beta.col(j));
+        temp_v = trans(X.slice(j)) *  (temp_y / n);
+        temp_beta_j = GetProxOne(temp_v, temp_weights);
+
+        // Update the matrix beta.
+        beta.col(j) = temp_beta_j;
+        // Update the vector x_beta (X_j\beta_j).
+        x_beta.col(j) = X.slice(j) * temp_beta_j;
+      }
+      // Obtain the value of the relative change.
+      temp_norm_old = norm(vectorise(old_beta));
+      change = norm(vectorise(beta)) - temp_norm_old;
+      // cout << i << "  " << counter<< "  " << fabs(as_scalar(change)) << "\n";
+      if(fabs(change) < tol) {
+        beta_ans(i, 0) = beta;
+        converged = true;
+      } else {
+        counter = counter + 1;
+        if(counter == max_iter) {
+          // cout << "No convergence for lam: " <<i<< "\n";
+          Function warning("warning");
+          warning("Function did not converge");
+        }
+      }
+
+    }
+  }
+
+  return beta_ans;
+}
+//
+// //
+// //
+// //
+
+
+
 //
 // // [[Rcpp::export]]
-// arma::field<sp_mat> FitAdditive(arma::vec y,
-//                                 arma::mat weights,
-//                                 arma::mat x_beta,
-//                                 NumericVector x,
-//                                 arma::mat beta,
-//                                 double tol, int p, int J, int n,
-//                                 int nlam, double max_iter) {
+// arma::vec testf(){
+//   mat A(5,6);
 //
-//   IntegerVector dimX = x.attr("dim");
-//   arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
+//   A = randn(5,6);
 //
-//   // The function will return a beta_ans list.
-//   // Each element corresponds to a lambda value and is a sparse matrix.
-//   // This is done for improved memory efficiency.
-//   arma::field<sp_mat> beta_ans(nlam, 1);
+//   arma::vec F = vectorise(A);
 //
-//   // Initialize some vectors and matrices.
-//   arma::vec temp_weights;
-//   arma::vec temp_y;
-//   arma::vec temp_v;
-//   arma::vec temp_beta_j;
-//
-//   double temp_norm_old;
-//   double change;
-//
-//   // Begin main loop for each vector of weights given.
-//   for(int i = 0; i < nlam; i++) {
-//
-//     temp_weights = weights.col(i) / n;
-//     int  counter = 0;
-//     bool converged = false;
-//     while(counter < max_iter && !converged) {
-//
-//       // We will use this to check convergence.
-//       arma::mat old_beta(beta.begin(), J, p, true);
-//
-//       // One loop of the block coordinate descent algorithm.
-//       for(int j = 0; j < p; j++) {
-//         temp_y = y - sum(x_beta, 1) + (X.slice(j) * beta.col(j));
-//         temp_v = trans(X.slice(j)) *  (temp_y / n);
-//         temp_beta_j = GetProxOne(temp_v, temp_weights);
-//
-//         // Update the matrix beta.
-//         beta.col(j) = temp_beta_j;
-//         // Update the vector x_beta (X_j\beta_j).
-//         x_beta.col(j) = X.slice(j) * temp_beta_j;
-//       }
-//       // Obtain the value of the relative change.
-//       temp_norm_old = norm(vectorise(old_beta));
-//       change = norm(vectorise(beta)) - temp_norm_old;
-//       // cout << i << "  " << counter<< "  " << fabs(as_scalar(change)) << "\n";
-//       if(fabs(change) < tol) {
-//         beta_ans(i, 0) = beta;
-//         converged = true;
-//       } else {
-//         counter = counter + 1;
-//         if(counter == max_iter) {
-//           // cout << "No convergence for lam: " <<i<< "\n";
-//           Function warning("warning");
-//           warning("Function did not converge");
-//         }
-//       }
-//
-//     }
-//   }
-//
-//   return beta_ans;
+//   return F;
 // }
-//
-// //
-// //
-// //
-// // // [[Rcpp::export]]
-// // arma::field<sp_mat> testf(){
-// //   sp_mat A(5,6);
-// //   sp_mat B(5,6);
-// //
-// //   A = randn(5,6);
-// //
-// //   B(0,0) = 3;
-// //   B(0,1) = 4;
-// //
-// //   sp_mat C = 2*B;
-// //
-// //   sp_mat D = 10*C;
-// //
-// //
-// //   field<sp_mat> F(4,1);
-// //   F(0,0) = A;
-// //   F(1,0) = B;
-// //   F(2,0) = C;
-// //   F(3,0) = randn(5,6);
-// //
-// //   return F;
-// // }
 //

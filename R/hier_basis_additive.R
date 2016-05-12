@@ -1,12 +1,11 @@
 # The main file for functions for additive hierBasis
 
-
 # The main function for an additive HierBasis
 AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
                               beta.mat = NULL,
                               nlam = 50, alpha = 0.5,
                               lam.min.ratio = 1e-4, k = 3,
-                              max.iter = 100) {
+                              max.iter = 100, tol = 1e-4) {
   # Initialize sample size and some other values.
   n <- length(y)
   p <- ncol(x)
@@ -17,9 +16,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
   # The matrix of xbar values so we know what values to center by.
   xbar <- matrix(NA, ncol = p, nrow = J)
 
-  # The main bottleneck, to generate the deisgn matrices.
+  # The main bottleneck, to generate the design matrices.
   for(j in 1:p) {
-    # print(j)
     design.mat <- lapply(1:(nbasis), function(i) {x[, j]^i})
     design.mat <- do.call(cbind, design.mat)
 
@@ -52,8 +50,12 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
   ybar <- mean(y)
 
   mod <- FitAdditive(y - mean(y), weights, x.beta, design.array,
-                     beta.mat, 1e-5, p, J, n, nlam, max.iter)
+                     beta.mat, tol, p, J, n, nlam, max.iter)
+  mod2 <- as.array(mod, dim = c(length(mod), dim(mod[[1]])))
   yhats <- sapply(1:nlam, function(l) rowSums(GetFitted(mod[ , , l], design.array)))
+
+
+
   return(list("beta" = mod,
               #"xmat" = design.array,
               "x" = x,
@@ -110,29 +112,5 @@ PlotFunc <- function(obj, ind.func, ind.lam, ...) {
     abline(h = 0)
   }
 }
-
-
-
-# set.seed(1)
-#
-# dats <- lapply(1:100, function(i){GenerateData(n = 100, p = 80, SNR = 10, seed = i)})
-#
-# times <- numeric(100)
-# for(i in 1:100) {
-#   print(i)
-#   dat <- dats[[i]]
-#   times[i] <- system.time(mod.hb <- AdditiveHierBasis(dat$x, dat$y, nbasis = 30, max.lambda = 30,
-#                                                       beta.mat = NULL,
-#                                                       nlam = 50, alpha = 0.005,
-#                                                       lam.min.ratio = 1e-2, k = 3,
-#                                                       max.iter = 1000))[3]
-# }
-#
-#
-#
-#
-# min(GetMSE(dat$f0, mod.hb$yhats))
-
-
 
 

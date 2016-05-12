@@ -18,3 +18,36 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// GetProxOne
+arma::vec GetProxOne(arma::vec y, arma::vec weights);
+RcppExport SEXP HierBasis_GetProxOne(SEXP ySEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weights(weightsSEXP);
+    __result = Rcpp::wrap(GetProxOne(y, weights));
+    return __result;
+END_RCPP
+}
+// FitAdditive
+arma::field<arma::sp_mat> FitAdditive(arma::vec y, arma::mat weights, arma::mat x_beta, NumericVector x, arma::mat beta, double tol, int p, int J, int n, int nlam, double max_iter);
+RcppExport SEXP HierBasis_FitAdditive(SEXP ySEXP, SEXP weightsSEXP, SEXP x_betaSEXP, SEXP xSEXP, SEXP betaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x_beta(x_betaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< double >::type max_iter(max_iterSEXP);
+    __result = Rcpp::wrap(FitAdditive(y, weights, x_beta, x, beta, tol, p, J, n, nlam, max_iter));
+    return __result;
+END_RCPP
+}
