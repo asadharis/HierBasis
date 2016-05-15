@@ -6,6 +6,17 @@
 
 using namespace Rcpp;
 
+// cpp_qr
+Rcpp::List cpp_qr(arma::mat x);
+RcppExport SEXP HierBasis_cpp_qr(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    __result = Rcpp::wrap(cpp_qr(x));
+    return __result;
+END_RCPP
+}
 // GetProx
 arma::sp_mat GetProx(arma::vec y, arma::mat weights);
 RcppExport SEXP HierBasis_GetProx(SEXP ySEXP, SEXP weightsSEXP) {

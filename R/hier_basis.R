@@ -99,32 +99,33 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
                      nlam = 50, lam.min.ratio = 1e-4, m.const = 3) {
   # We first evaluate the sample size.
   n <- length(y)
+  nbasis <- length(y)
 
   # Create simple matrix of polynomial basis.
-  design.mat <- sapply(1:(nbasis), function(i) {x^i})
+  design.mat <- outer(x, 1:nbasis, "^")
 
-  xbar <- apply(design.mat, 2, mean)
-  design.mat.centered <- as(scale(design.mat, scale = FALSE), Class = "dgCMatrix")
+  design.mat.centered <- scale(design.mat, scale = FALSE)
+  xbar <- attributes(design.mat.centered)[[2]]
+  #design.mat.centered <- as(design.mat.centered, Class = "dgCMatrix")
 
   ybar <- mean(y)
   y.centered <- y - ybar
 
-  qr.obj <- Matrix::qr(design.mat.centered)
-  x.mat <- Matrix::qr.Q(qr.obj) * sqrt(n)
+  qr.obj <- cpp_qr(design.mat.centered)
+  x.mat <- qr.obj[[1]] * sqrt(n)
   # Note that for a orthogonal design the two problems are equivalent:
   # (1/2n)*|Y - X %*% beta|^2 + lambda * Pen(beta),
   # (1/2)*|t(X) %*% Y/n - beta|^2 + (lambda) * Pen(beta).
 
   # Thus all we need, is to solve the proximal problem.
   # Define v = t(X) %*% Y/n for the prox problem.
-  v <- as.vector(Matrix::crossprod(x.mat, y.centered/n))
+  v <- as.vector(crossprod(x.mat, y.centered/n))
 
   # Now we note that our penalty is given by
   # sum_{k = 1}^{K} a_k * || beta[k:K] ||,
   # where K = nbasis.
   # We now evaluate the weights a_k:
   ak <- (1:nbasis)^m.const - (0:(nbasis - 1))^m.const
-
 
 
   # If a maximum value for lambda is not provided we then evaluate a
@@ -147,22 +148,19 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   beta.hat <-  GetProx(v, weights)
 
   # Put everything back on the original scale.
-  R.mat <- qrR(qr.obj) / sqrt(n)
-  beta.hat2 <- backsolve(R.mat, beta.hat)
+  R.mat <- qr.obj[[2]] / sqrt(n)
+  beta.hat2 <- as(backsolve(R.mat, as.matrix(beta.hat)), Class = "dgCMatrix")
 
   # Find the intercepts for each fitted model.
   intercept <- as.vector(ybar - xbar %*% beta.hat2)
 
   # Get size of active set.
-  active.set <- apply(beta.hat, 2, function(x) {
+  active.set <- apply(beta.hat2, 2, function(x) {
     length(which(x != 0))
   })
 
   # Evaluate the predicted values.
-  y.hat <- sapply(1:nlam, FUN  = function(i) {
-    x.mat %*% beta.hat[, i] + ybar
-  })
-  y.hat <- do.call(cbind, y.hat)
+  y.hat <- x.mat %*% beta.hat + ybar
 
   # Return the object of class HierBasis.
   result <- list()
