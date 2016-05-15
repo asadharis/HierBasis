@@ -5,16 +5,6 @@
 using namespace arma;
 using namespace Rcpp;
 
-// [[Rcpp::export]]
-Rcpp::List cpp_qr(arma::mat x) {
-
-  arma::mat Q, R;
-  qr(Q, R, x);
-
-  return Rcpp::List::create(Rcpp::Named("Q") = Q,
-                            Rcpp::Named("R") = R);
-}
-
 
 double cpp_max(double x, double y) {
   // A simple helper functions for max of two scalars.
