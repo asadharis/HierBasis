@@ -1,8 +1,8 @@
 Package: HierBasis
 Type: Package
 Title: Nonparametric Regression And Sparse Additive Modeling
-Version: 0.1.2
-Date: 2016-05-12
+Version: 0.2.0
+Date: 2016-05-20
 Author: Asad Haris, Ali Shojaie and Noah Simon
 Maintainer: Asad Haris <aharis@ue.edu>
 Description: Nonparametric regression and high dimensional additive model via a convex hierarchical penalty.

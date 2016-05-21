@@ -19,8 +19,8 @@ for the estimated functions.
 \tabular{ll}{
 Package: \tab HierBasis\cr
 Type: \tab Package\cr
-Version: \tab 0.1.2\cr
-Date: \tab 2016-05-12\cr
+Version: \tab 0.2.0\cr
+Date: \tab 2016-05-20\cr
 License: \tab GPL (>= 2) \cr
 }
 

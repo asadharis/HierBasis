@@ -18,6 +18,24 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// solveHierBasis
+List solveHierBasis(arma::mat design_mat, arma::vec y, arma::vec ak, arma::mat weights, int n, double lam_min_ratio, int nlam, double max_lambda);
+RcppExport SEXP HierBasis_solveHierBasis(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP lam_min_ratioSEXP, SEXP nlamSEXP, SEXP max_lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::mat >::type design_mat(design_matSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ak(akSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type lam_min_ratio(lam_min_ratioSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< double >::type max_lambda(max_lambdaSEXP);
+    __result = Rcpp::wrap(solveHierBasis(design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda));
+    return __result;
+END_RCPP
+}
 // GetProxOne
 arma::vec GetProxOne(arma::vec y, arma::vec weights);
 RcppExport SEXP HierBasis_GetProxOne(SEXP ySEXP, SEXP weightsSEXP) {

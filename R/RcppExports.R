@@ -5,6 +5,10 @@ GetProx <- function(y, weights) {
     .Call('HierBasis_GetProx', PACKAGE = 'HierBasis', y, weights)
 }
 
+solveHierBasis <- function(design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda) {
+    .Call('HierBasis_solveHierBasis', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda)
+}
+
 GetProxOne <- function(y, weights) {
     .Call('HierBasis_GetProxOne', PACKAGE = 'HierBasis', y, weights)
 }

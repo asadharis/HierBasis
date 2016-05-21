@@ -101,23 +101,14 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   n <- length(y)
 
   # Create simple matrix of polynomial basis.
-  design.mat <- sapply(1:(nbasis), function(i) {x^i})
+  design.mat <- outer(x, 1:nbasis, "^")
+  design.mat.centered <- scale(design.mat, scale = FALSE)
 
-  xbar <- apply(design.mat, 2, mean)
-  design.mat.centered <- as(scale(design.mat, scale = FALSE), Class = "dgCMatrix")
+  xbar <- attributes(design.mat.centered)[[2]]
+  #design.mat.centered <- as(design.mat.centered, Class = "dgCMatrix")
 
   ybar <- mean(y)
   y.centered <- y - ybar
-
-  qr.obj <- Matrix::qr(design.mat.centered)
-  x.mat <- Matrix::qr.Q(qr.obj) * sqrt(n)
-  # Note that for a orthogonal design the two problems are equivalent:
-  # (1/2n)*|Y - X %*% beta|^2 + lambda * Pen(beta),
-  # (1/2)*|t(X) %*% Y/n - beta|^2 + (lambda) * Pen(beta).
-
-  # Thus all we need, is to solve the proximal problem.
-  # Define v = t(X) %*% Y/n for the prox problem.
-  v <- as.vector(Matrix::crossprod(x.mat, y.centered/n))
 
   # Now we note that our penalty is given by
   # sum_{k = 1}^{K} a_k * || beta[k:K] ||,
@@ -125,54 +116,72 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   # We now evaluate the weights a_k:
   ak <- (1:nbasis)^m.const - (0:(nbasis - 1))^m.const
 
-
-
-  # If a maximum value for lambda is not provided we then evaluate a
-  # maximum lambda value based on a non-tight bound.
+  ak.mat <- matrix(rep(ak, nlam), ncol = nlam)
   if(is.null(max.lambda)) {
-    max.lambda <- max(abs(v) / ak)
+    max.lambda <- NA
   }
 
-  # Generate sequence of lambda values.
-  lambdas <- 10^seq(log10(max.lambda),
-         log10(max.lambda * lam.min.ratio),
-         length = nlam)
+  result.HierBasis <- solveHierBasis(design.mat.centered, y.centered,
+                                     ak, ak.mat, n, lam.min.ratio, nlam,
+                                     max.lambda)
+  beta.hat2 <- result.HierBasis$beta
 
-  # Generate matrix of weights.
-  weights <- sapply(lambdas, FUN = function(lam) {
-    lam * ak
-  })
-
-  # Estimates parameter vector beta for each lambda.
-  beta.hat <-  GetProx(v, weights)
-
-  # Put everything back on the original scale.
-  R.mat <- qrR(qr.obj) / sqrt(n)
-  beta.hat2 <- backsolve(R.mat, beta.hat)
+#   ans <- tryHier(design.mat.centered, y.centered, ak.mat,ak, length(y),
+#                  lam.min.ratio, nlam, NA)
+#
+#
+#   # Now we generate the QR decomposition.
+#   qr.obj <- Matrix::qr(design.mat.centered)
+#   x.mat <- Matrix::qr.Q(qr.obj) * sqrt(n)
+#
+#   # Note that for a orthogonal design the two problems are equivalent:
+#   # (1/2n)*|Y - X %*% beta|^2 + lambda * Pen(beta),
+#   # (1/2)*|t(X) %*% Y/n - beta|^2 + (lambda) * Pen(beta).
+#
+#   # Thus all we need, is to solve the proximal problem.
+#   # Define v = t(X) %*% Y/n for the prox problem.
+#   v <- as.vector(Matrix::crossprod(x.mat, y.centered/n))
+#
+#   # If a maximum value for lambda is not provided we then evaluate a
+#   # maximum lambda value based on a non-tight bound.
+#   if(is.null(max.lambda)) {
+#     max.lambda <- max(abs(v) / ak)
+#   }
+#
+#   # Generate sequence of lambda values.
+#   lambdas <- 10^seq(log10(max.lambda),
+#          log10(max.lambda * lam.min.ratio),
+#          length = nlam)
+#
+#   # Generate matrix of weights.
+#   weights <- sapply(lambdas, FUN = function(lam) {
+#     lam * ak
+#   })
+#
+#   # Estimates parameter vector beta for each lambda.
+#   beta.hat <-  GetProx(v, weights)
+#
+#   # Put everything back on the original scale.
+#   R.mat <- Matrix::qrR(qr.obj) / sqrt(n)
+#   beta.hat2 <- backsolve(R.mat, beta.hat)
 
   # Find the intercepts for each fitted model.
   intercept <- as.vector(ybar - xbar %*% beta.hat2)
 
   # Get size of active set.
-  active.set <- apply(beta.hat, 2, function(x) {
-    length(which(x != 0))
-  })
+  active.set <- colSums((beta.hat2!=0)*1)
 
   # Evaluate the predicted values.
-  y.hat <- sapply(1:nlam, FUN  = function(i) {
-    x.mat %*% beta.hat[, i] + ybar
-  })
-  y.hat <- do.call(cbind, y.hat)
+  y.hat <- design.mat %*% beta.hat2 + ybar
 
   # Return the object of class HierBasis.
   result <- list()
   result$intercept <- intercept
-  result$beta <- as(beta.hat2, Class = "dgCMatrix")
+  result$beta <- beta.hat2
   result$fitted.values <- y.hat
   result$y <- y
   result$x <- x
-  #result$x.mat <- x.mat
-  result$lambdas <- lambdas
+  result$lambdas <- as.vector(result.HierBasis$lambdas)
   result$m.const <- m.const
   result$nbasis <- nbasis
   result$active <- active.set

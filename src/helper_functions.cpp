@@ -66,6 +66,81 @@ arma::sp_mat GetProx(arma::vec y,
   return beta;
 }
 
+
+// [[Rcpp::export]]
+
+List solveHierBasis(arma::mat design_mat,
+                  arma::vec y,
+                  arma::vec ak,arma::mat weights,
+                  int n, double lam_min_ratio, int nlam,
+                  double max_lambda) {
+
+  // This function returns the argmin of the following function:
+  // (0.5) * ||y - X %*% beta||_2^2 + P(beta), where
+  // P(\beta) = \sum_{j=1}^{J_n} weights[j, lam_indx] * norm(beta[j:J_n])
+  // where j indexes the basis function and lam_indx indexes the different
+  // lambda values.
+  //
+  // Args:
+  //    design_mat: A design matrix of size n * J_n, where J_n is number of
+  //                basis functions. This matrix should be centered.
+  //    y: The centered response vector.
+  //    ak: A J_n-vector of weights where ak[j] = j^m - (j-1)^m for a smoothness
+  //        level m.
+  //    weights: A J_n * nlam matrix which is simply the concatenation [ak,ak,...,ak].
+  //    n: The number of observations, equal to length(y).
+  //    lam_min_ratio: Ratio of min_lambda to max_lambda.
+  //    nlam: Number of lambda values.
+  //    max_lambda: A double specifying the maximum lambda, if NA then function
+  //                selects a max_lambda.
+  // Returns:
+  //    beta_hat2: The solution matrix, a J_n * nlam  matrix.
+
+  // Generate the x_mat, this is our orthonormal design matrix.
+  arma::mat x_mat, R_mat;
+  arma::qr_econ(x_mat, R_mat, design_mat);
+
+  x_mat = x_mat * sqrt(n);
+  R_mat  = R_mat / sqrt(n);
+  // arma::sp_mat R_mat2 = sp_mat(R_mat / sqrt(n));
+
+
+  // Note that for a orthogonal design with X^T %*% X = nI the
+  // two problems are equivalent:
+  // 1. (1/2n)*|Y - X %*% beta|^2 + lambda * Pen(beta),
+  // 2. (1/2)*|t(X) %*% Y/n - beta|^2 + lambda * Pen(beta).
+  //
+  // Thus all we need, is to solve the proximal problem.
+  // Define v_temp = t(X) %*% Y/n for the prox problem.
+
+  arma::vec v_temp = x_mat.t() * (y /n);
+
+  // We evaluate a max_lambda value if not specified by user.
+  if(R_IsNA(max_lambda)) {
+    // Followed by the maximum lambda value.
+    max_lambda = max(abs(v_temp) / ak);
+  }
+
+  // Generate the full lambda sequence.
+  arma::vec lambdas = linspace<vec>(log10(max_lambda),
+                                    log10(max_lambda * lam_min_ratio),
+                                    nlam);
+  lambdas = exp10(lambdas);
+
+  // Generate matrix of weights.
+  weights.each_row() %= lambdas.t();
+
+  // Obtain beta.hat, solve prox problem.
+  arma::sp_mat beta_hat =  GetProx(v_temp, weights);
+
+  // Take the inverse of the R_mat to obtain solution on the original scale
+  arma::mat beta_hat2 = solve(trimatu(R_mat), mat(beta_hat));
+
+  return List::create(Named("beta") = beta_hat2,
+                      Named("lambdas") = lambdas);
+
+}
+
 // [[Rcpp::export]]
 arma::vec GetProxOne(arma::vec y,
                      arma::vec weights) {
