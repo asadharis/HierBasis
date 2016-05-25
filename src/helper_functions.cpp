@@ -170,7 +170,7 @@ arma::vec GetProxOne(arma::vec y,
     // In the first part we have the scaling factor.
     beta.subvec(j, p - 1) = cpp_max(1 - weights(j) /
                                       norm(beta.subvec(j, p - 1)), 0) *
-                                      beta.subvec(j, p - 1);
+                                        beta.subvec(j, p - 1);
   }
 
   // Finally we return the solution of the optimization problem.
@@ -179,7 +179,7 @@ arma::vec GetProxOne(arma::vec y,
 
 
 // [[Rcpp::export]]
-arma::sp_mat FitAdditive(arma::vec y,
+List FitAdditive(arma::vec y,
                                 arma::mat weights, arma::vec ak,
                                 NumericVector x,
                                 arma::mat beta,
@@ -187,7 +187,7 @@ arma::sp_mat FitAdditive(arma::vec y,
                                 double alpha,
                                 double tol, int p, int J, int n,
                                 int nlam, double max_iter,
-                                bool beta_is_zero) {
+                                bool beta_is_zero, arma::vec active_set) {
 
   // Initialize some objects.
   IntegerVector dimX = x.attr("dim");
@@ -275,31 +275,33 @@ arma::sp_mat FitAdditive(arma::vec y,
 
   // Begin main loop for each value of lambda.
   for(int i = 0; i < nlam; i++) {
-
+    // Rcout<< "Lambda: " << i << "\n";
     temp_weights = weights.col(i) / n;
     int  counter = 0;
-    bool converged = false;
-    while(counter < max_iter && !converged) {
+    bool converged_final = false;
+    while(counter < max_iter && !converged_final) {
 
       // We will use this to check convergence.
       arma::mat old_beta(beta.begin(), J, p, true);
 
       // One loop of the block coordinate descent algorithm.
       for(int j = 0; j < p; j++) {
-        temp_y = y - sum(x_beta, 1) + (x_mats.slice(j) * beta.col(j));
-        temp_v = trans(x_mats.slice(j)) *  (temp_y / n);
-        temp_beta_j = GetProxOne(temp_v, temp_weights);
-
+        if(active_set(j) != 0) {
+          temp_y = y - sum(x_beta, 1) + (x_mats.slice(j) * beta.col(j));
+          temp_v = trans(x_mats.slice(j)) *  (temp_y / n);
+          temp_beta_j = GetProxOne(temp_v, temp_weights);
+          // Update the vector x_beta (X_j\beta_j).
+          x_beta.col(j) = x_mats.slice(j) * temp_beta_j;
+        } else {
+          temp_beta_j = zeros(J);
+          // Update the vector x_beta (X_j\beta_j).
+          x_beta.col(j) = zeros(n);
+        }
         // Update the matrix beta.
         beta.col(j) = temp_beta_j;
-        // Update the vector x_beta (X_j\beta_j).
-        x_beta.col(j) = x_mats.slice(j) * temp_beta_j;
       }
 
       temp_vec_beta = vectorise(old_beta);
-      if(i==0 && counter == 0) {
-        Rcout << temp_vec_beta;
-      }
 
       // Obtain the value of the relative change.
       temp_norm_old = norm(temp_vec_beta);
@@ -307,7 +309,32 @@ arma::sp_mat FitAdditive(arma::vec y,
       // Rcout << fabs(change) << "\n";
       if(fabs(change) < tol) {
         beta_ans.slice(i) = beta;
-        converged = true;
+        converged_final = true;
+
+        // One loop of the block coordinate descent algorithm.
+        // To update the active set and check for final convergence.
+        for(int j = 0; j < p; j++) {
+          temp_y = y - sum(x_beta, 1) + (x_mats.slice(j) * beta.col(j));
+          temp_v = trans(x_mats.slice(j)) *  (temp_y / n);
+          temp_beta_j = GetProxOne(temp_v, temp_weights);
+          // Update the vector x_beta (X_j\beta_j).
+          x_beta.col(j) = x_mats.slice(j) * temp_beta_j;
+
+          // Update the matrix beta.
+          beta.col(j) = temp_beta_j;
+
+          if(any(temp_beta_j) !=0 && active_set(j) == 0) {
+            active_set(j) = 1;
+            converged_final = false;
+          }
+        }
+
+        // If we have not converged but only updated the active set then we increment
+        // the counter.
+        if(!converged_final){
+          counter = counter + 1;
+        }
+
       } else {
         counter = counter + 1;
 
@@ -315,6 +342,7 @@ arma::sp_mat FitAdditive(arma::vec y,
           Function warning("warning");
           warning("Function did not converge");
         }
+
       }
 
     }
@@ -330,13 +358,21 @@ arma::sp_mat FitAdditive(arma::vec y,
     beta_final.col(i) = vectorise(beta_ans.slice(i));
   }
 
-  return beta_final;
+  return List::create(Named("beta") = beta_final,
+                      Named("lambdas") = lambdas);
 }
 
 
 
 // // [[Rcpp::export]]
 // List testf(){
+//
+//
+//   arma::vec temp(3, fill::zeros);
+//   arma::vec temp2 = cpp_max(1 - 2 / norm(temp),0) * temp;
+//   Rcout << temp2<< "\n";
+//   Rcout << 1-2/norm(temp);
+//
 //   int J = 2;
 //   int p = 3;
 //   int nlam = 5;

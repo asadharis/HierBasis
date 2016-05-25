@@ -13,7 +13,7 @@ GetProxOne <- function(y, weights) {
     .Call('HierBasis_GetProxOne', PACKAGE = 'HierBasis', y, weights)
 }
 
-FitAdditive <- function(y, weights, x_beta, x, beta, tol, p, J, n, nlam, max_iter) {
-    .Call('HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, x_beta, x, beta, tol, p, J, n, nlam, max_iter)
+FitAdditive <- function(y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set) {
+    .Call('HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set)
 }
 

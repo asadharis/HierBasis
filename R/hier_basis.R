@@ -126,44 +126,6 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
                                      max.lambda)
   beta.hat2 <- result.HierBasis$beta
 
-#   ans <- tryHier(design.mat.centered, y.centered, ak.mat,ak, length(y),
-#                  lam.min.ratio, nlam, NA)
-#
-#
-#   # Now we generate the QR decomposition.
-#   qr.obj <- Matrix::qr(design.mat.centered)
-#   x.mat <- Matrix::qr.Q(qr.obj) * sqrt(n)
-#
-#   # Note that for a orthogonal design the two problems are equivalent:
-#   # (1/2n)*|Y - X %*% beta|^2 + lambda * Pen(beta),
-#   # (1/2)*|t(X) %*% Y/n - beta|^2 + (lambda) * Pen(beta).
-#
-#   # Thus all we need, is to solve the proximal problem.
-#   # Define v = t(X) %*% Y/n for the prox problem.
-#   v <- as.vector(Matrix::crossprod(x.mat, y.centered/n))
-#
-#   # If a maximum value for lambda is not provided we then evaluate a
-#   # maximum lambda value based on a non-tight bound.
-#   if(is.null(max.lambda)) {
-#     max.lambda <- max(abs(v) / ak)
-#   }
-#
-#   # Generate sequence of lambda values.
-#   lambdas <- 10^seq(log10(max.lambda),
-#          log10(max.lambda * lam.min.ratio),
-#          length = nlam)
-#
-#   # Generate matrix of weights.
-#   weights <- sapply(lambdas, FUN = function(lam) {
-#     lam * ak
-#   })
-#
-#   # Estimates parameter vector beta for each lambda.
-#   beta.hat <-  GetProx(v, weights)
-#
-#   # Put everything back on the original scale.
-#   R.mat <- Matrix::qrR(qr.obj) / sqrt(n)
-#   beta.hat2 <- backsolve(R.mat, beta.hat)
 
   # Find the intercepts for each fitted model.
   intercept <- as.vector(ybar - xbar %*% beta.hat2)
@@ -172,13 +134,13 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
   active.set <- colSums((beta.hat2!=0)*1)
 
   # Evaluate the predicted values.
-  y.hat <- design.mat %*% beta.hat2 + ybar
+  y.hat <- apply(design.mat %*% beta.hat2, 1, "+", intercept)
 
   # Return the object of class HierBasis.
   result <- list()
   result$intercept <- intercept
   result$beta <- beta.hat2
-  result$fitted.values <- y.hat
+  result$fitted.values <- t(y.hat)
   result$y <- y
   result$x <- x
   result$lambdas <- as.vector(result.HierBasis$lambdas)

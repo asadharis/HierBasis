@@ -146,28 +146,29 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 
   ybar <- mean(y)
 
-
-
-
-  mod <- FitAdditive(y - mean(y), ak.mat, ak,design.array,beta.mat,
-              max_lambda = NA, lam_min_ratio = 0.01,alpha = NA,tol = 1e-3, p, J, n,nlam, max_iter = 100,
-              beta_is_zero = TRUE)
-
-#   mod <- FitAdditive(y - mean(y), weights, x.beta, design.array,
-#                      beta.mat, tol, p, J, n, nlam, max.iter)
-
-  # Obtain the fitted values for each lambda value.
-  yhats <- Matrix::crossprod(apply(design.array, 1, cbind), mod)
-
-  beta2 <- mod
-  for(j in 1:p) {
-    beta2[(J * (j - 1) + 1):(J * j), ] <-
-      backsolve(r.matrices[, (J * (j - 1) + 1):(J * j)],
-                mod[(J * (j - 1) + 1):(J * j), ])
+  if(is.null(max.lambda)) {
+    max.lambda  <- NA
   }
+  if(is.null(alpha)) {
+    alpha <- NA
+  }
+  beta_is_zero <- all(beta.mat == 0)
+
+  mod <- FitAdditive(y - mean(y), ak.mat, ak, design.array, beta.mat,
+              max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
+              alpha = alpha, tol = tol,
+              p, J, n, nlam, max_iter = max.iter,
+              beta_is_zero = TRUE, active_set = colSums((beta.mat!=0)*1))
+
+  beta2 <-mod$beta
 
   # Obtain intercepts for model.
   intercept <- as.vector(ybar - (as.vector(xbar) %*% beta2))
+
+
+  # Obtain the fitted values for each lambda value.
+  yhats <- Matrix::crossprod(apply(design.array, 1, cbind), beta2) + ybar
+
 
   # Finally, we return an addHierbasis object.
   result <- list("beta" = beta2,
@@ -178,7 +179,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                  "fitted.values" = yhats,
                  "ybar" = ybar,
                  "xbar" = xbar,
-                 "lam" = lambdas,
+                 "lam" = mod$lambdas,
                  "m.const" = m.const)
   result$call <- match.call()
 
@@ -464,7 +465,7 @@ plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
   f.hat <- design.mat %*%
     object$beta[(J * (ind.func - 1) + 1):(J * ind.func), ind.lam]
   lin.inter <- approx(x.temp, f.hat)
-  plot(lin.inter$x, lin.inter$y - mean(lin.inter$y), ...)
+  plot(lin.inter$x, lin.inter$y, ...)
 
 }
 
