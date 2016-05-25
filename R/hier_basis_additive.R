@@ -106,10 +106,10 @@
 #'        col = c("red", "black"), lwd = 2, lty = 1)
 #'
 #'
-AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
+AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                               lam.min.ratio = 1e-4, nlam = 50,
                               beta.mat = NULL,
-                              alpha = 0.5, m.const = 3,
+                              alpha = NULL, m.const = 3,
                               max.iter = 100, tol = 1e-4) {
 
   # Initialize sample size and some other values.
@@ -117,50 +117,44 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = 10,
   p <- ncol(x)
   J <- nbasis
 
-  # Each slice of array has the orthogonal design for each feature.
-  design.array <- array(NA, dim = c(n, J, p))
-  # Another array to store the R matrices of the QR decomposition.
-  r.matrices <- Matrix(0, nrow = J, ncol = J * p)
-
-  # The matrix of xbar values so we know what values to center by.
-  xbar <- matrix(NA, ncol = p, nrow = J)
-
-  # The main bottleneck, to generate the design matrices.
-  for(j in 1:p) {
-    design.mat <- lapply(1:(nbasis), function(i) {x[, j]^i})
-    design.mat <- do.call(cbind, design.mat)
-
-    xbar[, j] <- apply(design.mat, 2, mean)
-    design.mat.centered <- scale(design.mat, scale = FALSE)
-    qr.obj <- qr(design.mat.centered)
-    design.array[, , j] <- qr.Q(qr.obj) * sqrt(n)
-    r.matrices[, (J * (j - 1) + 1):(J * j) ] <- qr.R(qr.obj) / sqrt(n)
-  }
 
   if(is.null(beta.mat)) {
     # Initialize a matrix of different beta_j values.
     beta.mat <- matrix(0, ncol = p, nrow = J)
   }
-  # The matrix of values X_j * \beta_j for each j = 1, 2, ..., p.
-  x.beta <- sapply(1:p, function(j) {
-    design.array[, , j] %*% beta.mat[, j]
-  })
 
-  # Generate sequence of lambda values.
-  lambdas <- 10^seq(log10(max.lambda),
-                    log10(max.lambda * lam.min.ratio),
-                    length = nlam)
 
-  weights <- sapply(1:nlam, function(lam) {
-    ak <- (1:nbasis)^m.const - (0:(nbasis - 1))^m.const
-    temp.ans <- lambdas[lam] * ak * alpha
-    temp.ans[1] <- temp.ans[1] + (1 - alpha) * lambdas[lam]
-    temp.ans
-  })
+
+  ak <- (1:nbasis)^m.const - (0:(nbasis - 1))^m.const
+  ak.mat <- matrix(rep(ak, nlam), ncol = nlam)
+
+
+  # Each slice of array has the orthogonal design for each feature.
+  design.array <- array(NA, dim = c(n, J, p))
+
+  # The matrix of xbar values so we know what values to center by.
+  xbar <- matrix(NA, ncol = p, nrow = J)
+
+
+  for(j in 1:p) {
+    design.mat <- outer(x[, j], 1:nbasis, "^")
+    design.mat.centered <- scale(design.mat, scale = FALSE)
+
+    xbar[, j] <- attributes(design.mat.centered)[[2]]
+    design.array[, , j] <- design.mat.centered
+  }
+
   ybar <- mean(y)
 
-  mod <- FitAdditive(y - mean(y), weights, x.beta, design.array,
-                     beta.mat, tol, p, J, n, nlam, max.iter)
+
+
+
+  mod <- FitAdditive(y - mean(y), ak.mat, ak,design.array,beta.mat,
+              max_lambda = NA, lam_min_ratio = 0.01,alpha = NA,tol = 1e-3, p, J, n,nlam, max_iter = 100,
+              beta_is_zero = TRUE)
+
+#   mod <- FitAdditive(y - mean(y), weights, x.beta, design.array,
+#                      beta.mat, tol, p, J, n, nlam, max.iter)
 
   # Obtain the fitted values for each lambda value.
   yhats <- Matrix::crossprod(apply(design.array, 1, cbind), mod)

@@ -180,22 +180,86 @@ arma::vec GetProxOne(arma::vec y,
 
 // [[Rcpp::export]]
 arma::sp_mat FitAdditive(arma::vec y,
-                                arma::mat weights,
-                                arma::mat x_beta,
+                                arma::mat weights, arma::vec ak,
                                 NumericVector x,
                                 arma::mat beta,
+                                double max_lambda, double lam_min_ratio,
+                                double alpha,
                                 double tol, int p, int J, int n,
-                                int nlam, double max_iter) {
+                                int nlam, double max_iter,
+                                bool beta_is_zero) {
 
+  // Initialize some objects.
   IntegerVector dimX = x.attr("dim");
   arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
+  arma::cube x_mats(n, J, p);
+  arma::cube r_mats(J, J, p);
+  arma::vec max_lam_values(p);
 
 
-  // NEED TO EDIT THIS!!!!!!!
-  // Turns our WE DONT NEED THIS. WE CAN VECTORIZE AND MAK
-  // ONE BIG SPARSE MATRIX
-  arma::sp_mat beta_ans(p * J, nlam);
 
+  // This loop does the QR decompositon and generates the Q, R matrices.
+  // It also helps us find the maximum lambda value when it is not specified.
+  for(int i = 0; i < p; ++i) {
+    arma::mat temp_x_mat, temp_r_mat;
+
+    // Perform an 'economial' QR decomposition.
+    arma::qr_econ(temp_x_mat, temp_r_mat, X.slice(i));
+
+
+    // Generate the x_mat and the r_mat.
+    temp_x_mat = temp_x_mat * sqrt(n);
+    temp_r_mat = temp_r_mat / sqrt(n);
+
+    x_mats.slice(i) = temp_x_mat;
+    r_mats.slice(i) = temp_r_mat;
+
+
+
+    // If max_lambda = NULL, then we select the maximum lambda value ourselves.
+    if(R_IsNA(max_lambda)) {
+      arma::vec v_temp = temp_x_mat.t() * (y/n);
+      arma::vec temp_lam_max =  abs(v_temp)/ ak;
+
+      temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(v_temp(0)) + 1) - 1);
+      max_lam_values(i) = max(temp_lam_max);
+    }
+  }
+
+  if(R_IsNA(max_lambda)) {
+    max_lambda = max(max_lam_values);
+  }
+
+  //Rcout <<  max_lambda;
+
+  // Generate the full lambda sequence.
+  arma::vec lambdas = linspace<vec>(log10(max_lambda),
+                                    log10(max_lambda * lam_min_ratio),
+                                    nlam);
+  lambdas = exp10(lambdas);
+
+  // Generate matrix of weights.
+  if(!R_IsNA(alpha)) {
+    weights.each_row() %= alpha * lambdas.t();
+    weights.row(0) = weights.row(0) + (1 - alpha) * lambdas.t();
+  } else {
+    weights.each_row() %= pow(lambdas.t(), 2);
+    weights.row(0) = weights.row(0) + lambdas.t();
+  }
+
+
+  // If the user left initial beta == NULL, then we don't need to
+  // do all the matrix multiplication.
+  arma::mat x_beta(n, p, fill::zeros);
+  if(!beta_is_zero) {
+    for(int i = 0; i < p; ++i) {
+      x_beta.col(i) = x_mats.slice(i) * beta.col(i);
+    }
+  }
+
+  // Turns out WE CAN VECTORIZE AND MAKE
+  // ONE BIG SPARSE MATRIX.
+  arma::cube beta_ans(J, p, nlam);
 
   // Initialize some vectors and matrices.
   arma::vec temp_weights;
@@ -209,8 +273,7 @@ arma::sp_mat FitAdditive(arma::vec y,
   double change;
 
 
-
-  // Begin main loop for each vector of weights given.
+  // Begin main loop for each value of lambda.
   for(int i = 0; i < nlam; i++) {
 
     temp_weights = weights.col(i) / n;
@@ -223,24 +286,27 @@ arma::sp_mat FitAdditive(arma::vec y,
 
       // One loop of the block coordinate descent algorithm.
       for(int j = 0; j < p; j++) {
-        temp_y = y - sum(x_beta, 1) + (X.slice(j) * beta.col(j));
-        temp_v = trans(X.slice(j)) *  (temp_y / n);
+        temp_y = y - sum(x_beta, 1) + (x_mats.slice(j) * beta.col(j));
+        temp_v = trans(x_mats.slice(j)) *  (temp_y / n);
         temp_beta_j = GetProxOne(temp_v, temp_weights);
 
         // Update the matrix beta.
         beta.col(j) = temp_beta_j;
         // Update the vector x_beta (X_j\beta_j).
-        x_beta.col(j) = X.slice(j) * temp_beta_j;
+        x_beta.col(j) = x_mats.slice(j) * temp_beta_j;
       }
 
       temp_vec_beta = vectorise(old_beta);
+      if(i==0 && counter == 0) {
+        Rcout << temp_vec_beta;
+      }
 
       // Obtain the value of the relative change.
       temp_norm_old = norm(temp_vec_beta);
       change = norm(vectorise(beta)) - temp_norm_old;
-
+      // Rcout << fabs(change) << "\n";
       if(fabs(change) < tol) {
-        beta_ans.col(i) = vectorise(beta);
+        beta_ans.slice(i) = beta;
         converged = true;
       } else {
         counter = counter + 1;
@@ -254,23 +320,33 @@ arma::sp_mat FitAdditive(arma::vec y,
     }
   }
 
-  return beta_ans;
+  arma::sp_mat beta_final(p * J, nlam);
+  for(int i = 0; i < p; i++) {
+    arma::mat temp_slice = beta_ans.tube(0, i, J-1, i);
+    beta_ans.tube(0, i, J-1, i) = solve(trimatu(r_mats.slice(i)), temp_slice);
+  }
+
+  for(int i = 0; i < nlam; i++) {
+    beta_final.col(i) = vectorise(beta_ans.slice(i));
+  }
+
+  return beta_final;
 }
 
 
 
-
 // // [[Rcpp::export]]
-// arma::sp_mat testf(){
-//   sp_mat A(9,3);
-//   mat B(3,3);
+// List testf(){
+//   int J = 2;
+//   int p = 3;
+//   int nlam = 5;
+//   arma::cube beta_ans(J, p, nlam, fill::zeros);
+//   arma::mat test_mat(J, nlam, fill::randn);
 //
-//   B = randn(3,3);
-//   arma::vec C = vectorise(B);
-//   C.subvec(1, 2) = zeros(2);
+//   beta_ans.tube(0,0,J-1,0) = test_mat;
 //
-//   A.col(0) = C;
 //
-//   return A;
+//   return List::create(Named("test") = test_mat,
+//                Named("lambdas") = beta_ans);
+//
 // }
-
