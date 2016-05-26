@@ -219,10 +219,18 @@ List FitAdditive(arma::vec y,
     // If max_lambda = NULL, then we select the maximum lambda value ourselves.
     if(R_IsNA(max_lambda)) {
       arma::vec v_temp = temp_x_mat.t() * (y/n);
-      arma::vec temp_lam_max =  abs(v_temp)/ ak;
+      if(R_IsNA(alpha)) {
+        arma::vec temp_lam_max =  sqrt(abs(v_temp)/ ak);
 
-      temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(v_temp(0)) + 1) - 1);
-      max_lam_values(i) = max(temp_lam_max);
+        temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(v_temp(0)) + 1) - 1);
+        max_lam_values(i) = max(temp_lam_max);
+      } else {
+        arma::vec temp_lam_max =  abs(v_temp)/ (ak * alpha);
+
+        temp_lam_max(0) = fabs(v_temp(0));
+        max_lam_values(i) = max(temp_lam_max);
+      }
+
     }
   }
 
@@ -275,8 +283,8 @@ List FitAdditive(arma::vec y,
 
   // Begin main loop for each value of lambda.
   for(int i = 0; i < nlam; i++) {
-    // Rcout<< "Lambda: " << i << "\n";
-    temp_weights = weights.col(i) / n;
+    Rcout << "nlam: " << i<<"\n";
+    temp_weights = weights.col(i) ;
     int  counter = 0;
     bool converged_final = false;
     while(counter < max_iter && !converged_final) {
