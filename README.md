@@ -19,6 +19,7 @@ The main aim of `HierBasis` is to provide a user-friendly interface for non-para
 
 #####Updates
 - 2016/05/12 Version 0.1.0 released.
+- 2016/05/26 Version 0.2.2 released. Substantially faster by moving some matrix calculations to c++.
 
 #####Future Work
 - Speed-up of algorithms using an active set strategy.
