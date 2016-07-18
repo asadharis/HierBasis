@@ -6,6 +6,18 @@
 
 using namespace Rcpp;
 
+// GetProxOne
+arma::vec GetProxOne(arma::vec y, arma::vec weights);
+RcppExport SEXP HierBasis_GetProxOne(SEXP ySEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weights(weightsSEXP);
+    __result = Rcpp::wrap(GetProxOne(y, weights));
+    return __result;
+END_RCPP
+}
 // FitAdditive
 List FitAdditive(arma::vec y, arma::mat weights, arma::vec ak, NumericVector x, arma::mat beta, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, int nlam, double max_iter, bool beta_is_zero, arma::vec active_set);
 RcppExport SEXP HierBasis_FitAdditive(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP xSEXP, SEXP betaSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP active_setSEXP) {
@@ -29,6 +41,34 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type beta_is_zero(beta_is_zeroSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type active_set(active_setSEXP);
     __result = Rcpp::wrap(FitAdditive(y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set));
+    return __result;
+END_RCPP
+}
+// FitAdditiveLogistic
+List FitAdditiveLogistic(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, int nlam, double max_iter, bool beta_is_zero, double tol_inner, int max_iter_inner);
+RcppExport SEXP HierBasis_FitAdditiveLogistic(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP tol_innerSEXP, SEXP max_iter_innerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ak(akSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< double >::type max_lambda(max_lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type lam_min_ratio(lam_min_ratioSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< double >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< bool >::type beta_is_zero(beta_is_zeroSEXP);
+    Rcpp::traits::input_parameter< double >::type tol_inner(tol_innerSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter_inner(max_iter_innerSEXP);
+    __result = Rcpp::wrap(FitAdditiveLogistic(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner));
     return __result;
 END_RCPP
 }
@@ -62,9 +102,27 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// innerLoop
+arma::vec innerLoop(arma::vec resp, arma::vec beta, double intercept, double tol, int max_iter, arma::mat x_mat, int n, arma::vec weights);
+RcppExport SEXP HierBasis_innerLoop(SEXP respSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP x_matSEXP, SEXP nSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::vec >::type resp(respSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x_mat(x_matSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type weights(weightsSEXP);
+    __result = Rcpp::wrap(innerLoop(resp, beta, intercept, tol, max_iter, x_mat, n, weights));
+    return __result;
+END_RCPP
+}
 // solveHierLogistic
-List solveHierLogistic(arma::mat design_mat, arma::vec y, arma::vec ak, arma::mat weights, int n, int nlam, int J, double max_lambda, double lam_min_ratio, double tol, int max_iter);
-RcppExport SEXP HierBasis_solveHierLogistic(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP JSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP tolSEXP, SEXP max_iterSEXP) {
+List solveHierLogistic(arma::mat design_mat, arma::vec y, arma::vec ak, arma::mat weights, int n, int nlam, int J, double max_lambda, double lam_min_ratio, double tol, int max_iter, double tol_inner, int max_iter_inner);
+RcppExport SEXP HierBasis_solveHierLogistic(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP JSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP tol_innerSEXP, SEXP max_iter_innerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -79,17 +137,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type lam_min_ratio(lam_min_ratioSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    __result = Rcpp::wrap(solveHierLogistic(design_mat, y, ak, weights, n, nlam, J, max_lambda, lam_min_ratio, tol, max_iter));
-    return __result;
-END_RCPP
-}
-// testf
-List testf();
-RcppExport SEXP HierBasis_testf() {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    __result = Rcpp::wrap(testf());
+    Rcpp::traits::input_parameter< double >::type tol_inner(tol_innerSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter_inner(max_iter_innerSEXP);
+    __result = Rcpp::wrap(solveHierLogistic(design_mat, y, ak, weights, n, nlam, J, max_lambda, lam_min_ratio, tol, max_iter, tol_inner, max_iter_inner));
     return __result;
 END_RCPP
 }

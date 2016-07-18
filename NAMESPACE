@@ -5,6 +5,7 @@ import(Matrix)
 
 export(HierBasis, AdditiveHierBasis, GetDoF.HierBasis, view.model.addHierBasis)
 
+
 S3method(print, HierBasis)
 S3method(predict, HierBasis)
 

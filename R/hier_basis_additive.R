@@ -110,7 +110,10 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                               lam.min.ratio = 1e-4, nlam = 50,
                               beta.mat = NULL,
                               alpha = NULL, m.const = 3,
-                              max.iter = 100, tol = 1e-4) {
+                              max.iter = 100, tol = 1e-4,
+                              type = c("gaussian", "binomial"),
+                              max.iter.inner = 100, tol.inner = 1e-3,
+                              intercept = NULL) {
 
   # Initialize sample size and some other values.
   n <- length(y)
@@ -121,6 +124,9 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
   if(is.null(beta.mat)) {
     # Initialize a matrix of different beta_j values.
     beta.mat <- matrix(0, ncol = p, nrow = J)
+  }
+  if(is.null(intercept)) {
+    intercept <- 0
   }
 
 
@@ -138,10 +144,15 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 
   for(j in 1:p) {
     design.mat <- outer(x[, j], 1:nbasis, "^")
-    design.mat.centered <- scale(design.mat, scale = FALSE)
+    if(type[1] == "gaussian") {
+      design.mat.centered <- scale(design.mat, scale = FALSE)
 
-    xbar[, j] <- attributes(design.mat.centered)[[2]]
-    design.array[, , j] <- design.mat.centered
+      xbar[, j] <- attributes(design.mat.centered)[[2]]
+      design.array[, , j] <- design.mat.centered
+    } else {
+      design.array[, , j] <- design.mat
+    }
+
   }
 
   ybar <- mean(y)
@@ -149,41 +160,81 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
   if(is.null(max.lambda)) {
     max.lambda  <- NA
   }
-  if(is.null(alpha)) {
+  if(is.null(alpha)){
     alpha <- NA
   }
+
   beta_is_zero <- all(beta.mat == 0)
+  if(type[1] == "gaussian") {
+    mod <- FitAdditive(y - mean(y), ak.mat, ak, design.array, beta.mat,
+                       max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
+                       alpha = alpha, tol = tol,
+                       p, J, n, nlam, max_iter = max.iter,
+                       beta_is_zero = beta_is_zero, active_set = colSums((beta.mat!=0)*1))
 
-  mod <- FitAdditive(y - mean(y), ak.mat, ak, design.array, beta.mat,
-              max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
-              alpha = alpha, tol = tol,
-              p, J, n, nlam, max_iter = max.iter,
-              beta_is_zero = TRUE, active_set = colSums((beta.mat!=0)*1))
+    beta2 <-mod$beta
 
-  beta2 <-mod$beta
-
-  # Obtain intercepts for model.
-  intercept <- as.vector(ybar - (as.vector(xbar) %*% beta2))
-
-
-  # Obtain the fitted values for each lambda value.
-  yhats <- Matrix::crossprod(apply(design.array, 1, cbind), beta2) + ybar
+    # Obtain intercepts for model.
+    intercept <- as.vector(ybar - (as.vector(xbar) %*% beta2))
 
 
-  # Finally, we return an addHierbasis object.
-  result <- list("beta" = beta2,
-                 "intercept" = intercept,
-                 "y" = y,
-                 "x" = x,
-                 "nbasis" = nbasis,
-                 "fitted.values" = yhats,
-                 "ybar" = ybar,
-                 "xbar" = xbar,
-                 "lam" = mod$lambdas,
-                 "m.const" = m.const)
-  result$call <- match.call()
+    # Obtain the fitted values for each lambda value.
+    yhats <- Matrix::crossprod(apply(design.array, 1, cbind), beta2) + ybar
 
-  class(result) <- "addHierBasis"
+
+    # Finally, we return an addHierbasis object.
+    result <- list("beta" = beta2,
+                   "intercept" = intercept,
+                   "y" = y,
+                   "x" = x,
+                   "nbasis" = nbasis,
+                   "fitted.values" = yhats,
+                   "ybar" = ybar,
+                   "xbar" = xbar,
+                   "lam" = mod$lambdas,
+                   "m.const" = m.const)
+    result$call <- match.call()
+
+    class(result) <- "addHierBasis"
+
+
+  } else {
+    mod <- FitAdditiveLogistic(y, ak.mat, ak, design.array, beta.mat,
+                               intercept = intercept,
+                               max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
+                               alpha = alpha, tol = tol,
+                               p, J, n, nlam, max_iter = max.iter,
+                               beta_is_zero = beta_is_zero,
+                               tol_inner = tol.inner, max_iter_inner = max.iter.inner)
+
+    beta2 <-mod$beta
+
+    # Obtain intercepts for model.
+    intercept <- mod$intercepts
+
+
+    # Obtain the fitted values for each lambda value.
+    yhats <- crossprod(apply(design.array, 1, cbind), beta2)
+    temp <- t(apply(yhats, 1, "+", intercept))
+    phats <- 1/(1 + exp(-temp))
+
+
+    # Finally, we return an addHierbasis object.
+    result <- list("beta" = beta2,
+                   "intercept" = intercept,
+                   "y" = y,
+                   "x" = x,
+                   "nbasis" = nbasis,
+                   "fitted.values" = phats,
+                   "ybar" = ybar,
+                   "xbar" = xbar,
+                   "lam" = mod$lambdas,
+                   "m.const" = m.const)
+    result$call <- match.call()
+
+    class(result) <- "addHierBasisLogistic"
+  }
+
   return(result)
 }
 

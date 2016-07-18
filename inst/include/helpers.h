@@ -20,6 +20,6 @@ inline double cpp_max(double x, double y) {
 }
 
 
-RcppExport arma::vec GetProxOne(arma::vec y, arma::vec weights);
+arma::vec GetProxOne(arma::vec y, arma::vec weights);
 
 #endif // __HELPERS__

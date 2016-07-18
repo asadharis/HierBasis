@@ -96,7 +96,10 @@
 #' }
 #'
 HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
-                     nlam = 50, lam.min.ratio = 1e-4, m.const = 3) {
+                     nlam = 50, lam.min.ratio = 1e-4, m.const = 3,
+                     type = c("gaussian", "binomial"),
+                     max.iter = 100, tol = 1e-3,
+                     max.iter.inner = 100, tol.inner = 1e-3) {
   # We first evaluate the sample size.
   n <- length(y)
 
@@ -121,36 +124,67 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     max.lambda <- NA
   }
 
-  result.HierBasis <- solveHierBasis(design.mat.centered, y.centered,
-                                     ak, ak.mat, n, lam.min.ratio, nlam,
-                                     max.lambda)
-  beta.hat2 <- result.HierBasis$beta
+  if(type[1] == "gaussian") {
+    result.HierBasis <- solveHierBasis(design.mat.centered, y.centered,
+                                       ak, ak.mat, n, lam.min.ratio, nlam,
+                                       max.lambda)
+    beta.hat2 <- result.HierBasis$beta
 
 
-  # Find the intercepts for each fitted model.
-  intercept <- as.vector(ybar - xbar %*% beta.hat2)
+    # Find the intercepts for each fitted model.
+    intercept <- as.vector(ybar - xbar %*% beta.hat2)
 
-  # Get size of active set.
-  active.set <- colSums((beta.hat2!=0)*1)
+    # Get size of active set.
+    active.set <- colSums((beta.hat2!=0)*1)
 
-  # Evaluate the predicted values.
-  y.hat <- apply(design.mat %*% beta.hat2, 1, "+", intercept)
+    # Evaluate the predicted values.
+    y.hat <- apply(design.mat %*% beta.hat2, 1, "+", intercept)
 
-  # Return the object of class HierBasis.
-  result <- list()
-  result$intercept <- intercept
-  result$beta <- beta.hat2
-  result$fitted.values <- t(y.hat)
-  result$y <- y
-  result$x <- x
-  result$lambdas <- as.vector(result.HierBasis$lambdas)
-  result$m.const <- m.const
-  result$nbasis <- nbasis
-  result$active <- active.set
-  result$xbar <- xbar
-  result$ybar <- ybar
-  result$call <- match.call()
-  class(result) <- "HierBasis"
+    # Return the object of class HierBasis.
+    result <- list()
+    result$intercept <- intercept
+    result$beta <- beta.hat2
+    result$fitted.values <- t(y.hat)
+    result$y <- y
+    result$x <- x
+    result$lambdas <- as.vector(result.HierBasis$lambdas)
+    result$m.const <- m.const
+    result$nbasis <- nbasis
+    result$active <- active.set
+    result$xbar <- xbar
+    result$ybar <- ybar
+    result$call <- match.call()
+    class(result) <- "HierBasis"
+  } else {
+    result.HierBasis <- solveHierLogistic(design.mat, y,
+                                       ak, ak.mat, n, nlam, nbasis,
+                                       max.lambda, lam.min.ratio,
+                                       tol, max.iter,
+                                       tol.inner, max.iter.inner)
+    beta.hat2 <- result.HierBasis$beta
+
+
+    # Get size of active set.
+    active.set <- colSums((beta.hat2!=0)*1)
+
+    # Evaluate the predicted values.
+    y.hat <- result.HierBasis$fitted
+
+    # Return the object of class HierBasis.
+    result <- list()
+    result$beta <- beta.hat2
+    result$fitted.values <- y.hat
+    result$y <- y
+    result$x <- x
+    result$lambdas <- as.vector(result.HierBasis$lambdas)
+    result$m.const <- m.const
+    result$nbasis <- nbasis
+    result$active <- active.set
+    result$xbar <- xbar
+    result$ybar <- ybar
+    result$call <- match.call()
+    class(result) <- "HierBasisLogistic"
+  }
 
   return(result)
 }

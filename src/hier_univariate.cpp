@@ -3,10 +3,8 @@
 #include <Rcpp.h>
 #include "helpers.h"
 
-
 using namespace arma;
 using namespace Rcpp;
-
 
 
 // [[Rcpp::export]]
@@ -84,6 +82,7 @@ List solveHierBasis(arma::mat design_mat,
   //                selects a max_lambda.
   // Returns:
   //    beta_hat2: The solution matrix, a J_n * nlam  matrix.
+  //    lambdas: Sequence of lambda values used for fitting.
 
   // Generate the x_mat, this is our orthonormal design matrix.
   arma::mat x_mat, R_mat;
@@ -134,12 +133,67 @@ List solveHierBasis(arma::mat design_mat,
 
 
 // [[Rcpp::export]]
+arma::vec innerLoop(arma::vec resp,
+                    arma::vec beta, double intercept,
+                    double tol, int max_iter,
+                    arma::mat x_mat,
+                    int n, arma::vec weights) {
+  bool converge = false;
+  int counter = 0;
+
+  arma::vec temp_resp;
+  arma::vec beta_new = beta;
+  double intercept_new;
+
+  while(!converge && counter < max_iter) {
+
+    temp_resp = x_mat.t() * ((resp - intercept) / n);
+
+    // The argmin is hence equivalent to that of
+    // (1/2) * ||v - beta||_2^2 + 4 * lam * Pen(beta).
+    // In main func weights will be weights.col(i)
+
+    beta_new = GetProxOne(temp_resp, 4 * weights);
+    intercept_new =  mean(resp - x_mat * beta_new);
+
+
+    double change1 = pow(intercept_new - intercept, 2) + sum(square(beta_new - beta));
+    double change2 = pow(intercept_new, 2) + sum(square(beta_new));;
+
+
+    if( pow(change1, 0.5) / pow(change2, 0.5) < tol  < tol) {
+      beta = beta_new;
+      intercept = intercept_new;
+      converge = true;
+    } else {
+      beta = beta_new;
+      intercept  = intercept_new;
+      counter = counter + 1;
+      if(counter == max_iter) {
+        beta = beta_new;
+        intercept = intercept_new;
+        Function warning("warning");
+        warning("Function did not converge for inner loop for some lambda.");
+      }
+    }
+
+  }
+  arma::vec inter_vec(1);
+  inter_vec(0) = intercept;
+  return join_vert(inter_vec, beta);
+
+}
+
+
+
+// [[Rcpp::export]]
 List solveHierLogistic(arma::mat design_mat,
                        arma::vec y,
                        arma::vec ak,arma::mat weights,
                        int n, int nlam, int J,
                        double max_lambda, double lam_min_ratio,
-                       double tol, int max_iter) {
+                       double tol, int max_iter,
+                       double tol_inner, int max_iter_inner) {
 
   // This function returns the argmin of the following function:
   // -L(beta) + P(beta), where
@@ -149,18 +203,25 @@ List solveHierLogistic(arma::mat design_mat,
   //
   // Args:
   //    design_mat: A design matrix of size n * J_n, where J_n is number of
-  //                basis functions. This matrix should be centered.
-  //    y: The centered response vector.
+  //                basis functions.
+  //    y: The response vector.
   //    ak: A J_n-vector of weights where ak[j] = j^m - (j-1)^m for a smoothness
   //        level m.
   //    weights: A J_n * nlam matrix which is simply the concatenation [ak,ak,...,ak].
   //    n: The number of observations, equal to length(y).
   //    lam_min_ratio: Ratio of min_lambda to max_lambda.
   //    nlam: Number of lambda values.
-  //    max_lambda: A double specifying the maximum lambda, if NA then function
-  //                selects a max_lambda.
+  //    max_lambda: A double specifying the maximum lambda. A max lambda needs to
+  //                be specified for logistic regression.
+  //    tol, tol_inner: The tolerance for the outer and inner loop respectively.
+  //    max_iter, max_iter_inner: The maximum number of iterations for outer and
+  //                              inner loops respectively.
   // Returns:
-  //    beta_hat2: The solution matrix, a J_n * nlam  matrix.
+  //    beta_final: The sparse solution matrix, a J_n * nlam  matrix.
+  //    intercept: The vector of fitted intercepts of size nlam.
+  //    lambdas: Sequence of lambda values used for fitting.
+  //    fitted: The fitted probabilities.
+  //
 
   // Generate the x_mat, this is our orthonormal design matrix.
   arma::mat x_mat, R_mat;
@@ -168,6 +229,25 @@ List solveHierLogistic(arma::mat design_mat,
 
   x_mat = x_mat * sqrt(n);
   R_mat  = R_mat / sqrt(n);
+
+  // We evaluate a max_lambda value if not specified by user.
+  if(R_IsNA(max_lambda)) {
+
+    // A simple calculation to evelaute the max lambda,
+    // If we wish to find a max lambda, then beta = 0 and hence the
+    // temp fitted probabilities are 0.5. The current quadratic approximation
+    // is given by
+    // y_tilde =  intercept + X * beta + (y - p_hat)/(p_jhat * (1 - p_hat)).
+    // In this case this is simply 4 * (y - 0.5).
+    // Finally max_lambda is give  first finding
+    // v_temp = t(x_mat) * (4 * (y - 0.5))/n followed by
+    // max(abs(v_temp)) / (4*ak).
+    arma::vec v_temp = x_mat.t() * ((y - 0.5) / n);
+
+    // Followed by the maximum lambda value.
+    max_lambda = max(abs(v_temp) / ak);
+  }
+
 
   // Generate the full lambda sequence.
   arma::vec lambdas = linspace<vec>(log10(max_lambda),
@@ -180,11 +260,21 @@ List solveHierLogistic(arma::mat design_mat,
 
   // The final matrix we will use to store beta values.
   arma::mat beta_ans(J, nlam);
+  // The final vector to store values for the intercept.
+  arma::vec intercept_ans(nlam);
 
   // The vectors we will use to check convergence.
   // We also use this for the sake of warm starts.
   arma::vec beta(J, fill::zeros);
-  arma::vec beta_new(J, fill::zeros);
+  //  arma::vec beta_new(J, fill::zeros);
+
+
+  double intercept = 0;
+  //  double intercept_new = 0;
+
+  // The full parameter vector which containts the intercept + covariates.
+  arma::vec pars(J + 1, fill::zeros);
+  arma::vec pars_new(J + 1, fill::zeros);
 
   // For each lambda and each middle iteration number,
   // We design a new vector of probabilities and consequently a new
@@ -197,33 +287,54 @@ List solveHierLogistic(arma::mat design_mat,
 
   // Begin outer loop to decrement lambdas.
   for(int i = 0; i < nlam; ++i) {
+    //Rcout << "Solving for Lambda num: " << i <<"\n";
+
     // Begin middle loop to update quadratic approximation of
     // log-likelihood.
     bool converge = false;
     int counter = 0;
     while(!converge && counter < max_iter) {
+
       temp_xbeta = x_mat * beta;
-      temp_prob = 1 / (1 + exp(-1 * temp_xbeta));
-      temp_resp = temp_xbeta +
-                  (y - temp_prob) / (temp_prob * (1 - temp_prob));
-      temp_resp = x_mat.t() * (temp_resp / n);
-
+      temp_prob = 1 / (1 + exp(-1 * (intercept + temp_xbeta)));
       // Note that the optimization problem is actually given by
-      // (1/4) * (1/2) * ||v - beta||_2^2 + lam * Pen(beta),
-      // where the 1/4 comes from the weighted least squares part.
-      // The argmin is hence equivalent to that of
-      // (1/2) * ||v - beta||_2^2 + 4 * lam * Pen(beta).
-      beta_new = GetProxOne(temp_resp, 4 * weights.col(i));
+      // (1/4) * (1/2) * ||y - beta_inter - X %*% beta||_2^2 + lam * Pen(beta),
+      // where the 1/4 comes from the weighted least squares part and beta_inter
+      // is the intercept term. Unlike linear models, we cannot ignore the intercept
+      // term now.
+      // Hence we use a simple coordinate descent algorithm.
 
-      if(fabs(norm(beta_new) - norm(beta)) < tol) {
-        beta_ans.col(i) = beta_new;
-        beta = beta_new;
+
+
+      temp_resp = intercept + temp_xbeta +
+        (y - temp_prob) / (temp_prob % (1 - temp_prob));
+
+
+      pars(0) = intercept;
+      pars.subvec(1, J) = beta;
+      // Obtain updated parameter.
+      pars_new = innerLoop(temp_resp, beta, intercept,
+                           tol_inner, max_iter_inner,
+                           x_mat, n, weights.col(i));
+
+
+
+      // Rcout << "Lambda"<< i<< ": "<< norm(pars_new - pars)/norm(pars_new)  << "\n";
+      if(norm(pars_new - pars) / norm(pars_new)  < tol) {
+
+        beta_ans.col(i) = pars_new.subvec(1, J);
+        intercept_ans(i) = pars_new(0);
+        beta = beta_ans.col(i);
+        intercept = pars_new(0);
         converge = true;
       } else {
-        beta = beta_new;
+        beta = pars_new.subvec(1, J);
+        intercept = pars_new(0);
         counter = counter + 1;
         if(counter == max_iter) {
           beta_ans.col(i) = beta;
+          intercept_ans(i) = intercept;
+
           Function warning("warning");
           warning("Function did not converge for some lambda.");
         }
@@ -231,19 +342,30 @@ List solveHierLogistic(arma::mat design_mat,
     }
   }
 
-  arma::vec fit_xbeta = x_mat * beta_ans;
-  arma::vec fit_prob = 1 / (1 + exp(-1 * fit_xbeta));
+  // Generate matrix of intercepts, this will be a n*nlam martrix for the
+  // nlam different fitted models.
+  arma::mat inters_mat(n, nlam, fill::eye);
+  inters_mat.each_row() %= trans(intercept_ans);
+
+  arma::mat fit_xbeta = inters_mat + x_mat * beta_ans;
+  arma::mat fit_prob = 1 / (1 + exp(-1 * fit_xbeta));
+
 
   // Now return beta to the original scale.
   arma::mat beta_hat2 = solve(trimatu(R_mat), beta_ans);
+
   arma::sp_mat beta_final = sp_mat(beta_hat2);
 
 
   return List::create(Named("beta") = beta_final,
-                      Named("Lambdas") = lambdas,
-                      Named("Fitted") = fit_prob);
+                      Named("intercept") = intercept_ans,
+                      Named("lambdas") = lambdas,
+                      Named("fitted") = fit_prob);
 
 }
+
+
+
 
 //
 // // [[Rcpp::export]]
