@@ -113,7 +113,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                               max.iter = 100, tol = 1e-4,
                               type = c("gaussian", "binomial"),
                               max.iter.inner = 100, tol.inner = 1e-3,
-                              intercept = NULL) {
+                              intercept = NULL, line.search.par = 0.5,
+                              step.size = 1) {
 
   # Initialize sample size and some other values.
   n <- length(y)
@@ -197,15 +198,15 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 
     class(result) <- "addHierBasis"
 
-
   } else {
-    mod <- FitAdditiveLogistic(y, ak.mat, ak, design.array, beta.mat,
+    mod <- FitAdditiveLogistic2(y, ak.mat, ak, design.array, beta.mat,
                                intercept = intercept,
                                max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
                                alpha = alpha, tol = tol,
                                p, J, n, nlam, max_iter = max.iter,
                                beta_is_zero = beta_is_zero,
-                               tol_inner = tol.inner, max_iter_inner = max.iter.inner)
+                               tol_inner = tol.inner, max_iter_inner = max.iter.inner,
+                               step_size = step.size, lineSrch_alpha = line.search.par)
 
     beta2 <-mod$beta
 
