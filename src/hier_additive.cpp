@@ -146,6 +146,7 @@ List FitAdditive(arma::vec y,
   double change;
 
 
+
   // Begin main loop for each value of lambda.
   for(int i = 0; i < nlam; i++) {
     // Rcout << "nlam: " << i<<"\n";
@@ -444,7 +445,7 @@ List FitAdditiveLogistic(arma::vec y,
 
   // Begin loop-1 for each value of lambda.
   for(int i = 0; i < nlam; i++) {
-    Rcout << "nlam: " << i<<"Value is : "<< lambdas(i) <<"\n";
+    // Rcout << "nlam: " << i<<"Value is : "<< lambdas(i) <<"\n";
     temp_weights = weights.col(i) ;
     int  counter = 0;
     bool converged_final = false;
@@ -756,7 +757,7 @@ List FitAdditiveLogistic2(arma::vec y,
       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
 
       //Rcout << "Now the problem\n";
-      Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)  << "\n";
+      // Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)  << "\n";
       if(pow(temp_norm_new, 0.5) / pow(temp_norm_old, 0.5) < tol) {
         beta_ans.slice(i) = beta;
         intercept_ans(i) = intercept;

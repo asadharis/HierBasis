@@ -193,7 +193,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                    "ybar" = ybar,
                    "xbar" = xbar,
                    "lam" = mod$lambdas,
-                   "m.const" = m.const)
+                   "m.const" = m.const,
+                   "type" = "gaussian")
     result$call <- match.call()
 
     class(result) <- "addHierBasis"
@@ -230,10 +231,11 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                    "ybar" = ybar,
                    "xbar" = xbar,
                    "lam" = mod$lambdas,
-                   "m.const" = m.const)
+                   "m.const" = m.const,
+                   "type" = "binomial")
     result$call <- match.call()
 
-    class(result) <- "addHierBasisLogistic"
+    class(result) <- "addHierBasis"
   }
 
   return(result)
@@ -438,7 +440,14 @@ predict.addHierBasis <- function(object, new.x = NULL, ...) {
   ans <- Matrix::crossprod(apply(design.array, 1, cbind), object$beta)
 
   # Add the intercept term.
-  t(apply(ans, 1, "+", object$intercept))
+  final.ans <- t(apply(ans, 1, "+", object$intercept))
+
+  # If this is a linear model then we are done.
+  if(object$type == "gaussian") {
+    return(final.ans)
+  } else {
+    1/(1 + exp(-final.ans))
+  }
 }
 
 #' Plot function for \code{addHierBasis}
