@@ -664,7 +664,6 @@ List FitAdditiveLogistic2(arma::vec y,
                           double tol, int p, int J, int n,
                           int nlam, double max_iter,
                           bool beta_is_zero,
-                          double tol_inner, int max_iter_inner,
                           double step_size, double lineSrch_alpha) {
 
   //   IntegerVector dimX = x.attr("dim");
@@ -780,10 +779,6 @@ List FitAdditiveLogistic2(arma::vec y,
     }
   }
   arma::sp_mat beta_final(p * J, nlam);
-  //   for(int i = 0; i < p; i++) {
-  //     arma::mat temp_slice = beta_ans.tube(0, i, J-1, i);
-  //     beta_ans.tube(0, i, J-1, i) = solve(trimatu(r_mats.slice(i)), temp_slice);
-  //   }
 
   for(int i = 0; i < nlam; i++) {
     beta_final.col(i) = vectorise(beta_ans.slice(i));

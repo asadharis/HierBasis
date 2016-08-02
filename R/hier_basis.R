@@ -29,6 +29,14 @@
 #' rangeing from \code{max.lambda} to \code{max.lambda * lam.min.ratio}.
 #' @param lam.min.ratio The ratio of the largest and smallest lambda value.
 #' @param m.const The order of smoothness, usually not more than 3 (default).
+#' @param type Specifies type of regression, "gaussian" is for linear regression with continous
+#' response and "binomial" is for logistic regression with binary response.
+#' @param max.iter Maximum number of iterations for outer loop for
+#' logistic regression.
+#' @param tol Tolerance for convergence of outer loop.
+#' @param max.iter.inner Maximum number of iterations for inner loop for
+#' logistic regression.
+#' @param tol.inner Tolerance for convergence of inner loop.
 #'
 #' @return   An object of class HierBasis with the following elements:
 #'

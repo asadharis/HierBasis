@@ -13,8 +13,8 @@ FitAdditiveLogistic <- function(y, weights, ak, X, beta, intercept, max_lambda, 
     .Call('HierBasis_FitAdditiveLogistic', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner)
 }
 
-FitAdditiveLogistic2 <- function(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner, step_size, lineSrch_alpha) {
-    .Call('HierBasis_FitAdditiveLogistic2', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner, step_size, lineSrch_alpha)
+FitAdditiveLogistic2 <- function(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha) {
+    .Call('HierBasis_FitAdditiveLogistic2', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha)
 }
 
 GetProx <- function(y, weights) {

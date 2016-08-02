@@ -4,7 +4,7 @@
 \alias{print.addHierBasis}
 \title{Print the coefficients of fitted models.}
 \usage{
-print.addHierBasis(x, lam.index = NULL, digits = 3, ...)
+\method{print}{addHierBasis}(x, lam.index = NULL, digits = 3, ...)
 }
 \arguments{
 \item{x}{A fitted model, an object of class \code{addHierBasis}.}

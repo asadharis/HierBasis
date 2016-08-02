@@ -4,9 +4,10 @@
 \alias{AdditiveHierBasis}
 \title{Estimating Sparse Additive Models}
 \usage{
-AdditiveHierBasis(x, y, nbasis = 10, max.lambda = 10,
-  lam.min.ratio = 1e-04, nlam = 50, beta.mat = NULL, alpha = 0.5,
-  m.const = 3, max.iter = 100, tol = 1e-04)
+AdditiveHierBasis(x, y, nbasis = 10, max.lambda = NULL,
+  lam.min.ratio = 1e-04, nlam = 50, beta.mat = NULL, alpha = NULL,
+  m.const = 3, max.iter = 100, tol = 1e-04, type = c("gaussian",
+  "binomial"), intercept = NULL, line.search.par = 0.5, step.size = 1)
 }
 \arguments{
 \item{x}{An \eqn{n \times p}{n x p} matrix of covariates.}
@@ -33,6 +34,18 @@ the sparsity penalty and the hierarchical penalty. Default is 0.5.}
 \item{max.iter}{Maximum number of iterations for block coordinate descent.}
 
 \item{tol}{Tolerance for block coordinate descent, stopping precision.}
+
+\item{type}{Specifies type of regression, "gaussian" is for linear regression with continous
+response and "binomial" is for logistic regression with binary response.}
+
+\item{intercept}{For logistic regression, this specifies an initial value for
+the intercept. If \code{NULL} (default), then the initial value is the coefficient of
+the null model obtained by \code{glm} function.}
+
+\item{line.search.par}{For logistic regression, the parameter for the line search
+within the proximal gradient descent algorithm, this must be within the interval \eqn{(0,\, 1)}.}
+
+\item{step.size}{For logistic regression, an initial step size for the line search algorithm.}
 }
 \value{
 An object of class addHierBasis with the following elements:

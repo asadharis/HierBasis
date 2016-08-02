@@ -5,7 +5,8 @@
 \title{Nonparametric Regression using Hierarchical Basis Functions}
 \usage{
 HierBasis(x, y, nbasis = length(y), max.lambda = NULL, nlam = 50,
-  lam.min.ratio = 1e-04, m.const = 3)
+  lam.min.ratio = 1e-04, m.const = 3, type = c("gaussian", "binomial"),
+  max.iter = 100, tol = 0.001, max.iter.inner = 100, tol.inner = 0.001)
 }
 \arguments{
 \item{x}{A vector of dependent variables.}
@@ -26,6 +27,14 @@ rangeing from \code{max.lambda} to \code{max.lambda * lam.min.ratio}.}
 \item{lam.min.ratio}{The ratio of the largest and smallest lambda value.}
 
 \item{m.const}{The order of smoothness, usually not more than 3 (default).}
+
+\item{type}{Specifies type of regression, "gaussian" is for linear regression with continous
+response and "binomial" is for logistic regression with binary response.}
+
+\item{max.iter.inner}{Maximum number of iterations for inner loop for
+logistic regression.}
+
+\item{tol.inner}{Tolerance for convergence of inner loop.}
 }
 \value{
 An object of class HierBasis with the following elements:

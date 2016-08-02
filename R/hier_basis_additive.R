@@ -1,4 +1,3 @@
-
 #' Estimating Sparse Additive Models
 #'
 #' The main function for fitting sparse additive models via the additive
@@ -34,6 +33,14 @@
 #' @param m.const The order of smoothness, usually not more than 3 (default).
 #' @param max.iter Maximum number of iterations for block coordinate descent.
 #' @param tol Tolerance for block coordinate descent, stopping precision.
+#' @param type Specifies type of regression, "gaussian" is for linear regression with continous
+#' response and "binomial" is for logistic regression with binary response.
+#' @param intercept For logistic regression, this specifies an initial value for
+#' the intercept. If \code{NULL} (default), then the initial value is the coefficient of
+#' the null model obtained by \code{glm} function.
+#' @param line.search.par For logistic regression, the parameter for the line search
+#' within the proximal gradient descent algorithm, this must be within the interval \eqn{(0,\, 1)}.
+#' @param step.size For logistic regression, an initial step size for the line search algorithm.
 #'
 #' @return
 #' An object of class addHierBasis with the following elements:
@@ -51,6 +58,7 @@
 #' \item{xbar}{The \code{nbasis} \eqn{\times}{x} \code{p} matrix of means
 #' of the full design matrix.}
 #' \item{ybar}{The mean of the vector y.}
+#'
 #'
 #' @export
 #' @author Asad Haris (\email{aharis@@uw.edu}),
@@ -112,7 +120,6 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                               alpha = NULL, m.const = 3,
                               max.iter = 100, tol = 1e-4,
                               type = c("gaussian", "binomial"),
-                              max.iter.inner = 100, tol.inner = 1e-3,
                               intercept = NULL, line.search.par = 0.5,
                               step.size = 1) {
 
@@ -200,13 +207,15 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
     class(result) <- "addHierBasis"
 
   } else {
+    if(is.na(max.lambda)) {
+      stop("Max lambda value needs to be specified for logistic regression.")
+    }
     mod <- FitAdditiveLogistic2(y, ak.mat, ak, design.array, beta.mat,
                                intercept = intercept,
                                max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
                                alpha = alpha, tol = tol,
                                p, J, n, nlam, max_iter = max.iter,
                                beta_is_zero = beta_is_zero,
-                               tol_inner = tol.inner, max_iter_inner = max.iter.inner,
                                step_size = step.size, lineSrch_alpha = line.search.par)
 
     beta2 <-mod$beta
@@ -259,6 +268,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 #'
 #' @seealso \code{\link{AdditiveHierBasis}},
 #' \code{\link{view.model.addHierBasis}}
+#'
+#' @method print addHierBasis
 #'
 #' @examples
 #' \dontrun{
