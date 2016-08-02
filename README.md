@@ -88,7 +88,7 @@ points(new.x, yhat.new[, 4], cex = 1.5, pch = 16, col = "red")
 abline(v = new.x, lty = 2)
 ```
 
-![](test_READM_files/figure-markdown_github/unnamed-chunk-2-1.png)
+![](README_github_files/figure-markdown_github/unnamed-chunk-2-1.png)
 
 The `AdditiveHierBasis` function allows us to fit sparse additive models. As before we really only need a design matrix `x` and response vector `y`. In addition for additive models we do not automatically select `max.lambda` value and this must be specified.
 
@@ -137,7 +137,7 @@ plot(fit.additive, ind.lam = 20, ind.func = 4,
 lines(xs, 0 * xs, lwd = 2)
 ```
 
-![](test_READM_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](README_github_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 ### 2. Adaptibility:
 
