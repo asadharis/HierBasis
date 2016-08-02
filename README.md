@@ -190,6 +190,27 @@ view.model.addHierBasis(fit.additive, lam.index = 20)
     ## [[6]]
     ## [1] "-0.049x^1"  "-0.0167x^2" "0.0137x^3"  "0.00196x^4"
 
+### 4. Scalability:
+
+The algorithms presented here can handle substantially larger amounts of data within reasonable time. For example, for the original univariate example we now consider the case of 10,000 observations where we allow at-most 300 basis functions (a polynomial of degree at-most 300).
+
+``` r
+set.seed(1)
+
+# Generate the points x.
+n <- 1e+4
+x <- (1:n)/n
+
+# A simple quadratic function.
+y <- 5 * (x - 0.5)^2
+ydat <- y + rnorm(n, sd = 0.1)
+
+system.time(fit <- HierBasis(x, ydat, nlam = 10, nbasis = 300))
+```
+
+    ##    user  system elapsed 
+    ##    3.03    0.04    3.07
+
 ------------------------------------------------------------------------
 
 Installation
