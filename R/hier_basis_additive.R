@@ -210,7 +210,15 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
     if(is.na(max.lambda)) {
       stop("Max lambda value needs to be specified for logistic regression.")
     }
-    mod <- FitAdditiveLogistic2(y, ak.mat, ak, design.array, beta.mat,
+    if(length(unique(y)) != 2){
+      stop("For logistic regression the response vector must be binary.")
+    }
+    tempy <- factor(y)
+    tempy <- as.numeric(tempy) - 1
+
+    # We need to re-label the response as (-1, 1)
+    tempy[tempy == 0] <- -1
+    mod <- FitAdditiveLogistic2(tempy, ak.mat, ak, design.array, beta.mat,
                                intercept = intercept,
                                max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
                                alpha = alpha, tol = tol,
