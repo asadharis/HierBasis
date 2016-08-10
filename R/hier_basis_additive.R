@@ -128,6 +128,12 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
   p <- ncol(x)
   J <- nbasis
 
+  if(type == "binomial") {
+    if(!all(sort(unique(y)) == c(0,1))){
+      stop("The response for logistic regression must be a 0,1 vector")
+    }
+  }
+
 
   if(is.null(beta.mat)) {
     # Initialize a matrix of different beta_j values.
@@ -135,6 +141,9 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
   }
   if(is.null(intercept)) {
     intercept <- 0
+    if(type == "binomial") {
+      intercept <- log(mean(y)/(1 - mean(y)))
+    }
   }
 
 
@@ -208,30 +217,26 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 
   } else {
 
-    if(length(unique(y)) != 2){
-      stop("For logistic regression the response vector must be binary.")
-    }
-    tempy <- factor(y)
-    tempy <- as.numeric(tempy) - 1
 
-    if(is.null(max.lambda)) {
+    if(is.na(max.lambda)) {
+      #print("IS NULL HERES")
       # Obtain proportion of y with status 1.
-      mu <- mean(tempy)
+      mu <- mean(y)
       # Obtain mean of the columns of the FULL n*(pJ) design matrix.
       # We can actually keep things in our array notation
       xbar.full <- apply(design.array, c(2,3), mean)
 
       # We now obtain the means of the columns of the design matrix
       # with only the rows for which (y==1).
-      xbar.ones <- apply(design.array[which(tempy == 1), , ], c(2,3), mean)
+      xbar.ones <- apply(design.array[which(y == 1), , ], c(2,3), mean)
 
       # Finally this expression gives us the derivative of the logistic loss
       # at beta = 0
-      tempv <- mu * (xbar.full - x.bar.ones)
+      tempv <- mu * (xbar.full - xbar.ones)
 
       # Now we calculate the max lambda to get a zero beta
       lam.max <- apply(tempv, 2, function(x) {
-        if(is.null(alpha)) {
+        if(is.na(alpha)) {
           temp <- sqrt(abs(x)/ak)
           temp[1] <- 0.5 * (sqrt(4 * abs(x[1]) + 1) - 1);
         } else {
@@ -246,8 +251,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
     }
 
     # We need to re-label the response as (-1, 1)
+    tempy <- y
     tempy[tempy == 0] <- -1
-    #print(tempy)
 
     mod <- FitAdditiveLogistic2(tempy, ak.mat, ak, design.array, beta.mat,
                                intercept = intercept,
