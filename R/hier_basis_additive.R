@@ -285,7 +285,9 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                    "xbar" = xbar,
                    "lam" = mod$lambdas,
                    "m.const" = m.const,
-                   "type" = "binomial")
+                   "type" = "binomial",
+                   "iterations" = mod$iters,
+                   "objective" = mod$objective)
     result$call <- match.call()
 
     class(result) <- "addHierBasis"

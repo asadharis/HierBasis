@@ -161,7 +161,7 @@ arma::vec innerLoop(arma::vec resp,
     double change2 = pow(intercept_new, 2) + sum(square(beta_new));;
 
 
-    if( pow(change1, 0.5) / pow(change2, 0.5) < tol  < tol) {
+    if( pow(change1, 0.5) / pow(change2, 0.5) < tol ) {
       beta = beta_new;
       intercept = intercept_new;
       converge = true;

@@ -44,34 +44,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// FitAdditiveLogistic
-List FitAdditiveLogistic(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, int nlam, double max_iter, bool beta_is_zero, double tol_inner, int max_iter_inner);
-RcppExport SEXP HierBasis_FitAdditiveLogistic(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP tol_innerSEXP, SEXP max_iter_innerSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type weights(weightsSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type ak(akSEXP);
-    Rcpp::traits::input_parameter< arma::cube >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< double >::type intercept(interceptSEXP);
-    Rcpp::traits::input_parameter< double >::type max_lambda(max_lambdaSEXP);
-    Rcpp::traits::input_parameter< double >::type lam_min_ratio(lam_min_ratioSEXP);
-    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
-    Rcpp::traits::input_parameter< int >::type J(JSEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
-    Rcpp::traits::input_parameter< double >::type max_iter(max_iterSEXP);
-    Rcpp::traits::input_parameter< bool >::type beta_is_zero(beta_is_zeroSEXP);
-    Rcpp::traits::input_parameter< double >::type tol_inner(tol_innerSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter_inner(max_iter_innerSEXP);
-    __result = Rcpp::wrap(FitAdditiveLogistic(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner));
-    return __result;
-END_RCPP
-}
 // FitAdditiveLogistic2
 List FitAdditiveLogistic2(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, int nlam, double max_iter, bool beta_is_zero, double step_size, double lineSrch_alpha);
 RcppExport SEXP HierBasis_FitAdditiveLogistic2(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP step_sizeSEXP, SEXP lineSrch_alphaSEXP) {

@@ -237,291 +237,9 @@ List FitAdditive(arma::vec y,
 }
 
 
-arma::field<mat> innerLoopAdditive(arma::vec y,
-                                   arma::mat beta, double intercept,
-                                   double tol, int max_iter,
-                                   arma::cube x_mats, arma::mat x_beta,
-                                   int n, int J, int p,
-                                   arma::vec temp_weights) {
-  bool converge = false;
-  int counter = 0;
 
-  arma::vec temp_y;
-  arma::vec temp_v;
-  arma::vec temp_beta_j;
-
-  arma::mat beta_final;
-  double intercept_final = 0;
-  arma::mat x_beta_final = x_beta;
-
-  double temp_norm_old;
-  double temp_norm_new;
-  //double change;
-
-  while(!converge && counter < max_iter) {
-
-    // We will use this to check convergence.
-    arma::mat old_beta(beta.begin(), J, p, true);
-    double old_intercept = intercept;
-
-    // One loop of the block coordinate descent algorithm.
-    // This updates all the beta vectors.
-    for(int j = 0; j < p; j++) {
-      temp_y = y - intercept - sum(x_beta, 1) + (x_mats.slice(j) * beta.col(j));
-      temp_v = trans(x_mats.slice(j)) *  (temp_y / n);
-      temp_beta_j = GetProxOne(temp_v, 4 * temp_weights);
-      // Update the vector x_beta (X_j\beta_j).
-      x_beta.col(j) = x_mats.slice(j) * temp_beta_j;
-      // Update the matrix beta.
-      beta.col(j) = temp_beta_j;
-    }
-
-    // Now we update the intercept term.
-    intercept = mean(y - sum(x_beta, 1));
-
-    // Obtain norm of the updated parameter set.
-    temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
-    temp_norm_old = accu(square(beta)) + pow(intercept, 2);
-
-    //change = temp_norm_new - temp_norm_old;
-    //Rcout << pow(temp_norm_new , 0.5) / pow(temp_norm_old, 0.5) << "\n";
-    if(pow(temp_norm_new, 0.5) / pow(temp_norm_old, 0.5) < tol) {
-      beta_final = beta;
-      intercept_final = intercept;
-      x_beta_final = x_beta;
-      converge = true;
-      //Rcout << counter;
-      counter = counter + 1;
-
-    } else {
-      counter = counter + 1;
-
-      if(counter == max_iter) {
-        beta_final = beta;
-        intercept_final = intercept;
-        x_beta_final = x_beta;
-
-        Function warning("warning");
-        warning("Function did not converge for inner loop for some lambda.");
-      }
-
-    }
-
-  }
-
-  // A field (in R this would be a list) object to return.
-  arma::field<mat> final_ans(3);
-  // Mat a 1 x 1 matrix of the intercept term.
-  arma::mat intercept_mat(1, 1);
-  intercept_mat(0, 0) = intercept_final;
-  final_ans(0) = intercept_mat;
-  final_ans(1) = beta_final;
-  final_ans(2) = x_beta_final;
-
-  return final_ans;
-
-}
-
-
-// [[Rcpp::export]]
-List FitAdditiveLogistic(arma::vec y,
-                         arma::mat weights, arma::vec ak,
-                         arma::cube X,
-                         arma::mat beta, double intercept,
-                         double max_lambda, double lam_min_ratio,
-                         double alpha,
-                         double tol, int p, int J, int n,
-                         int nlam, double max_iter,
-                         bool beta_is_zero,
-                         double tol_inner, int max_iter_inner) {
-
-  //   IntegerVector dimX = x.attr("dim");
-  //   arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
-
-  // Initialize some objects.
-  arma::cube x_mats(n, J, p);
-  arma::cube r_mats(J, J, p);
-  arma::vec max_lam_values(p);
-
-  // This loop does the QR decompositon and generates the Q, R matrices.
-  // It also helps us find the maximum lambda value when it is not specified.
-  for(int i = 0; i < p; ++i) {
-    arma::mat temp_x_mat, temp_r_mat;
-
-    // Perform an 'economial' QR decomposition.
-    arma::qr_econ(temp_x_mat, temp_r_mat, X.slice(i));
-
-    // Generate the x_mat and the r_mat.
-    temp_x_mat = temp_x_mat * sqrt(n);
-    temp_r_mat = temp_r_mat / sqrt(n);
-
-    x_mats.slice(i) = temp_x_mat;
-    r_mats.slice(i) = temp_r_mat;
-
-
-    // If max_lambda = NULL, then we select the maximum lambda value ourselves.
-    if(R_IsNA(max_lambda)) {
-      // We begin by noting that the temp_response is bsaically given by
-      // y_tilde =  intercept + X * beta + (y - p_hat)/(p_jhat * (1 - p_hat)).
-      arma::vec v_temp = temp_x_mat.t() * ((y - 0.5) / (0.25 * n));
-      if(R_IsNA(alpha)) {
-        arma::vec temp_lam_max =  sqrt(abs(v_temp)/ (4 * ak));
-
-        // This is obtained by solving the inequality
-        // 4 * lambda^2 + 4 * lambda >= |v_1|.
-        temp_lam_max(0) = 0.5 * (sqrt(fabs(v_temp(0)) + 1) - 1);
-        max_lam_values(i) = max(temp_lam_max);
-      } else {
-        arma::vec temp_lam_max =  abs(v_temp)/ (4 * ak * alpha);
-
-        temp_lam_max(0) = fabs(v_temp(0)) / 4;
-        max_lam_values(i) = max(temp_lam_max);
-      }
-
-    }
-
-  }
-
-
-  if(R_IsNA(max_lambda)) {
-    max_lambda = max(max_lam_values);
-  }
-
-  // In the case of logistic regression we do not select a max_lambda
-  // in the function. In this case the user needs to specify a max_lambda.
-
-  // Generate the full lambda sequence.
-  arma::vec lambdas = linspace<vec>(log10(max_lambda),
-                                    log10(max_lambda * lam_min_ratio),
-                                    nlam);
-  lambdas = exp10(lambdas);
-
-  // Generate matrix of weights.
-  // The null alpha option is still there.
-  // If alpha is NULL then we select the theoretically optimal lambda weights.
-  if(!R_IsNA(alpha)) {
-    weights.each_row() %= alpha * lambdas.t();
-    weights.row(0) = weights.row(0) + (1 - alpha) * lambdas.t();
-  } else {
-    weights.each_row() %= pow(lambdas.t(), 2);
-    weights.row(0) = weights.row(0) + lambdas.t();
-  }
-
-
-  // If the user left initial beta == NULL, then the initial estimate is all
-  // zeros which means that we don't need to do all the matrix multiplication.
-  arma::mat x_beta(n, p, fill::zeros);
-  if(!beta_is_zero) {
-    for(int i = 0; i < p; ++i) {
-      x_beta.col(i) = x_mats.slice(i) * beta.col(i);
-    }
-  }
-
-  // We begin with storing the parameters as a cube, later this will
-  // be turned into one big sparse matrix.
-  arma::cube beta_ans(J, p, nlam);
-  // We also have a vector for storing the intercepts for each lambda value.
-  arma::vec intercept_ans(nlam);
-
-
-
-
-  double temp_norm_old;
-  double temp_norm_new;
-  //double change;
-
-  // Initialize some objects.
-  arma::vec temp_weights, temp_prob, temp_lin, temp_resp;
-  arma::field<mat> temp_field;
-
-  // Remember now, for logistic regression we have a
-  // 3-loop process, 3 nested loops.
-  // loop-1 (Outer Loop): Decrement lambda values.
-  // loop-2 (Middle Loop): Update quadratic approximation.
-  // loop-3 (Inner Loop): Do the block coordinate descent as before, HOWEVER,
-  //                      do not forget that now we also need to account for
-  //                      an intercept term.
-
-
-  // Begin loop-1 for each value of lambda.
-  for(int i = 0; i < nlam; i++) {
-    // Rcout << "nlam: " << i<<"Value is : "<< lambdas(i) <<"\n";
-    temp_weights = weights.col(i) ;
-    int  counter = 0;
-    bool converged_final = false;
-
-    // Now we start loop 2: updating the quadratic approximation.
-    while(counter < max_iter && !converged_final) {
-      double old_intercept = intercept;
-      arma::mat old_beta(beta.begin(), J, p, true);
-
-      temp_lin = sum(x_beta, 1) + intercept;
-      temp_prob = 1/(1 + exp(-1 * temp_lin));
-
-      arma::uvec indx1 = find(temp_prob >= 1 - 1e-5);
-      arma::uvec indx0 = find(temp_prob <= 1e-5);
-      temp_prob(indx1) = (1 - 1e-5) * ones<vec>(indx1.size());
-      temp_prob(indx0) = (1e-5) * ones<vec>(indx0.size());
-
-      temp_resp = temp_lin + (y - temp_prob)/(temp_prob % (1 - temp_prob));
-
-      // Loop-3: Here we write it compactly as a function.
-      temp_field = innerLoopAdditive(temp_resp, beta, intercept,
-                                     tol_inner, max_iter_inner,
-                                     x_mats, x_beta, n, J, p, temp_weights);
-      intercept = as_scalar(temp_field(0));
-      beta = temp_field(1);
-      x_beta = temp_field(2);
-
-      // Obtain norm of the updated parameter set.
-      temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
-      temp_norm_old = accu(square(beta)) + pow(intercept, 2);
-      if(pow(temp_norm_new, 0.5) / pow(temp_norm_old, 0.5) < tol) {
-        beta_ans.slice(i) = beta;
-        intercept_ans(i) = intercept;
-        converged_final = true;
-        counter = counter + 1;
-
-      } else {
-        counter = counter + 1;
-
-        if(counter == max_iter) {
-          beta_ans.slice(i) = beta;
-          intercept_ans(i) = intercept;
-          //Rcout << "No convergence for lambda: " << i << "\n";
-
-          Function warning("warning");
-          warning("Function did not converge");
-        }
-
-      }
-    }
-  }
-
-  arma::sp_mat beta_final(p * J, nlam);
-  for(int i = 0; i < p; i++) {
-    arma::mat temp_slice = beta_ans.tube(0, i, J-1, i);
-    beta_ans.tube(0, i, J-1, i) = solve(trimatu(r_mats.slice(i)), temp_slice);
-  }
-
-  for(int i = 0; i < nlam; i++) {
-    beta_final.col(i) = vectorise(beta_ans.slice(i));
-  }
-
-  return List::create(Named("beta") = beta_final,
-                      Named("intercepts") = intercept_ans,
-                      Named("lambdas") = lambdas);
-}
-
-
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Begin work on prox grad
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
 
@@ -533,6 +251,17 @@ double GetLogistic(arma::vec y,
   arma::vec beta_temp = vectorise(beta);
 
   return   accu(log(1 + exp((-1 * y) % (intercept + (x_temp * beta_temp))))) / n;
+}
+
+double get_penalty(vec wgts, mat beta, int p) {
+  // A simple function to return the ANNEAL penalty given a
+  // set of weights. The vector of weights is assumed to be the same length
+  // as beta. In notation of
+
+  mat rev_beta = flipud(beta);
+  mat norms = sqrt(cumsum(square(rev_beta)));
+  norms.each_col() %= wgts;
+  return accu(norms);
 }
 
 
@@ -654,6 +383,45 @@ arma::field<mat> ProxGradStep(arma::vec y,
   return final_ans;
 }
 
+
+double max_lam_logistic(cube X, vec y,
+                        int p, double alpha,
+                        vec ak) {
+  // A helper function for the logistic regression case.
+  // This function just generates the maximum lambda value used for the
+  // algorithm given a design array/cue.
+  mat xbar = mean(X, 0);
+  cube sub_x(accu(y), X.n_cols, X.n_slices);
+
+  double mu = mean(y);
+  vec max_lam_values(p);
+
+  for(int i = 0; i < p; i++) {
+    mat temp  = X.slice(i);
+    mat sub_temp = temp.rows(find(y == 1));
+
+    //Rcout << size(mean(temp)) <<", " << size(mean(sub_temp));
+    vec temp2 = mu * trans(mean(temp) - mean(sub_temp));
+    vec temp_lam_max;
+
+    if(R_IsNA(alpha)) {
+      temp_lam_max =  sqrt(abs(temp2)/ ak);
+      // This is obtained by solving the inequality
+      // lambda^2 + lambda >= |v_1|.
+      temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
+    } else {
+      temp_lam_max =  abs(temp2)/ (ak * alpha);
+
+      temp_lam_max(0) = fabs(temp2(0));
+    }
+    max_lam_values(i) = max(temp_lam_max);
+  }
+
+  return max(max_lam_values);
+
+}
+
+
 // [[Rcpp::export]]
 List FitAdditiveLogistic2(arma::vec y,
                           arma::mat weights, arma::vec ak,
@@ -666,15 +434,32 @@ List FitAdditiveLogistic2(arma::vec y,
                           bool beta_is_zero,
                           double step_size, double lineSrch_alpha) {
 
-  //   IntegerVector dimX = x.attr("dim");
-  //   arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
 
   // Initialize some objects.
   arma::cube x_mats(n, J, p);
   arma::cube r_mats(J, J, p);
-  arma::vec max_lam_values(p);
 
 
+  // This loop does the QR decompositon and generates the Q, R matrices.
+  // It also helps us find the maximum lambda value when it is not specified.
+  for(int i = 0; i < p; ++i) {
+    arma::mat temp_x_mat, temp_r_mat;
+
+    // Perform an 'economial' QR decomposition.
+    arma::qr_econ(temp_x_mat, temp_r_mat, X.slice(i));
+
+
+    // Generate the x_mat and the r_mat.
+    temp_x_mat = temp_x_mat * sqrt(n);
+    temp_r_mat = temp_r_mat / sqrt(n);
+
+    x_mats.slice(i) = temp_x_mat;
+    r_mats.slice(i) = temp_r_mat;
+  }
+
+  if(R_IsNA(max_lambda)) {
+    max_lambda = max_lam_logistic(x_mats, y, p, alpha, ak);
+  }
 
   // Generate the full lambda sequence.
   arma::vec lambdas = linspace<vec>(log10(max_lambda),
@@ -718,12 +503,13 @@ List FitAdditiveLogistic2(arma::vec y,
   arma::vec temp_weights, temp_prob, temp_lin, temp_resp;
   arma::field<mat> temp_field;
 
+  arma::vec counters(nlam);
+  arma::field<vec> loss_funcs(nlam, 1);
+
   // Remember now, for logistic regression we have
   // 2 loops
   // loop-1 (Outer Loop): Decrement lambda values.
   // loop-2 (Update one setp of prox gradiet descent): Update quadratic approximation.
-
-
 
   // Begin loop-1 for each value of lambda.
   for(int i = 0; i < nlam; i++) {
@@ -731,19 +517,26 @@ List FitAdditiveLogistic2(arma::vec y,
     temp_weights = weights.col(i) ;
     int  counter = 0;
     bool converged_final = false;
+    vec obj_val(1);
+    vec temp_new_obj(1);
+
+    double obj =  GetLogistic(y, x_mats, beta, intercept,
+                                n, J, p) + get_penalty(temp_weights, beta, p);
+    obj_val(0) = obj;
+    vec obj_val2 = obj_val;
 
     // Now we start loop 2: Do the prox grad step
     while(counter < max_iter && !converged_final) {
       double old_intercept = intercept;
       arma::mat old_beta(beta.begin(), J, p, true);
 
-
       step_size = LineSearch(lineSrch_alpha, step_size,
-                             y, X, beta, intercept,
+                             y, x_mats, beta, intercept,
                              n, J, p,
                              temp_weights);
+      //Rcout << "nlam : " << i<<" Stepsize is : "<< step_size <<"\n";
 
-      field<mat> temp_ans = ProxGradStep(y,X, beta, intercept,
+      field<mat> temp_ans = ProxGradStep(y, x_mats, beta, intercept,
                                          n, J, p,
                                          step_size,
                                          temp_weights);
@@ -751,13 +544,18 @@ List FitAdditiveLogistic2(arma::vec y,
       intercept = as_scalar(temp_ans(0));
       beta = temp_ans(1);
 
+      double new_obj = GetLogistic(y, x_mats, beta, intercept,
+                                  n, J, p) + get_penalty(temp_weights, beta, p);
+      temp_new_obj(0) = new_obj;
+      obj_val2 = join_cols(obj_val2, temp_new_obj);
+
       // Obtain norm of the updated parameter set.
       temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
 
       //Rcout << "Now the problem\n";
-      // Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)  << "\n";
-      if(pow(temp_norm_new, 0.5) / pow(temp_norm_old, 0.5) < tol) {
+      Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
+      if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
         beta_ans.slice(i) = beta;
         intercept_ans(i) = intercept;
         converged_final = true;
@@ -776,9 +574,19 @@ List FitAdditiveLogistic2(arma::vec y,
         }
 
       }
+
+      loss_funcs(i, 0) = obj_val2;
+      counters(i) = counter;
+
     }
   }
+
+
   arma::sp_mat beta_final(p * J, nlam);
+  for(int i = 0; i < p; i++) {
+    arma::mat temp_slice = beta_ans.tube(0, i, J-1, i);
+    beta_ans.tube(0, i, J-1, i) = solve(trimatu(r_mats.slice(i)), temp_slice);
+  }
 
   for(int i = 0; i < nlam; i++) {
     beta_final.col(i) = vectorise(beta_ans.slice(i));
@@ -786,7 +594,9 @@ List FitAdditiveLogistic2(arma::vec y,
 
   return List::create(Named("beta") = beta_final,
                       Named("intercepts") = intercept_ans,
-                      Named("lambdas") = lambdas);
+                      Named("lambdas") = lambdas,
+                      Named("iters") = counters,
+                      Named("objective") = loss_funcs);
 }
 
 

@@ -9,10 +9,6 @@ FitAdditive <- function(y, weights, ak, x, beta, max_lambda, lam_min_ratio, alph
     .Call('HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set)
 }
 
-FitAdditiveLogistic <- function(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner) {
-    .Call('HierBasis_FitAdditiveLogistic', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, tol_inner, max_iter_inner)
-}
-
 FitAdditiveLogistic2 <- function(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha) {
     .Call('HierBasis_FitAdditiveLogistic2', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha)
 }
