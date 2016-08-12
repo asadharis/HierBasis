@@ -554,7 +554,7 @@ List FitAdditiveLogistic2(arma::vec y,
       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
 
       //Rcout << "Now the problem\n";
-      Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
+      // Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
       if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
         beta_ans.slice(i) = beta;
         intercept_ans(i) = intercept;
