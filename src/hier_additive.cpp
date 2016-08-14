@@ -244,14 +244,18 @@ List FitAdditive(arma::vec y,
 
 
 double GetLogistic(arma::vec y,
-                   arma::cube x, arma::mat beta, double intercept,
-                   int n, int J, int p) {
+                    arma::cube x, arma::mat beta, double intercept,
+                    int n, int J, int p, vec act_set) {
 
-  arma::mat x_temp = reshape(x, n, p * J, 1);
-  arma::vec beta_temp = vectorise(beta);
-
-  return   accu(log(1 + exp((-1 * y) % (intercept + (x_temp * beta_temp))))) / n;
+  arma::vec lin_part = zeros<vec>(n);
+  for(int i = 0; i < p; ++i) {
+    if(act_set(i) != 0) {
+      lin_part = lin_part + (x.slice(i) * beta.col(i));
+    }
+  }
+  return   accu(log(1 + exp((-1 * y) % (intercept + lin_part)))) / n;
 }
+
 
 double get_penalty(vec wgts, mat beta, int p) {
   // A simple function to return the ANNEAL penalty given a
@@ -266,17 +270,20 @@ double get_penalty(vec wgts, mat beta, int p) {
 
 
 arma::field<mat> GetLogisticDerv(arma::vec y,
-                                 arma::cube x, arma::mat beta, double intercept,
-                                 int n, int J, int p) {
+                                  arma::cube x, arma::mat beta, double intercept,
+                                  int n, int J, int p, arma::mat x_full, arma::vec act_set) {
 
   // With this formulation here we are assuming that y takes values in {-, 1},
   // instead of {0,1}. This is simply done for making computations easy.
+  arma::vec lin_part = zeros<vec>(n);
+  for(int i = 0; i < p; ++i) {
+    if(act_set(i) != 0) {
+      lin_part = lin_part + (x.slice(i) * beta.col(i));
+    }
+  }
 
-  arma::mat x_temp = reshape(x, n, p * J, 1);
-  arma::vec beta_temp = vectorise(beta);
-
-  arma::vec temp = y / (1 + exp(y % (intercept + (x_temp * beta_temp))));
-  arma::mat temp2 = x_temp.each_col() % temp;
+  arma::vec temp = y / (1 + exp(y % (intercept + lin_part)));
+  arma::mat temp2 = x_full.each_col() % temp;
 
   arma::rowvec res = sum(temp2, 0) / n;
   arma::mat res2(res.begin(), J, p);
@@ -291,97 +298,95 @@ arma::field<mat> GetLogisticDerv(arma::vec y,
   final_ans(1) = -1 * res2;
 
   return  final_ans;
-  //List::create(Named("vec") = res.t(),
-  //        Named("mat") = res2);
 }
 
-arma::field<mat> GetGt(arma::vec y,
-                       arma::cube x, arma::mat beta, double intercept,
+
+arma::field<mat> GetZ(arma::mat beta, double intercept,
+                      arma::field<mat> derv,
                        int n, int J, int p, double step_size,
-                       arma::vec weights) {
+                       arma::vec weights, arma::vec act_set) {
+  // In notation of our algorithm
+  // z is given by prox(x_k - t*nabla(f(x_k)), tg)
+  // where the objective is (f + g), t is the step_size and x_k is the k^th
+  // iteration.
 
-  arma::field<mat> derv = GetLogisticDerv(y, x, beta, intercept,
-                                          n, J, p);
+  arma::mat inside = beta - step_size * derv(1);
 
-
-  arma::mat derv2 = beta - step_size * derv(1);
-
-  arma::mat ans(J, p);
+  arma::mat ans(J, p, fill::zeros);
   for(int i = 0; i < p; i++) {
-    ans.col(i) = (beta.col(i) - GetProxOne(derv2.col(i), step_size * weights))/step_size;
+    if(act_set(i) != 0) {
+      ans.col(i) = GetProxOne(inside.col(i), step_size * weights);
+    }
   }
-  // The ans is intercept - (intercept - step_size * derv(0)) / step_size;
-  arma::mat ans_intercept =  derv(0);
 
   // A field (in R this would be a list) object to return.
   arma::field<mat> final_ans(2);
-  final_ans(0) = ans_intercept;
+  final_ans(0) = intercept - (step_size * derv(0));
   final_ans(1) = ans;
 
   return final_ans;
 }
 
 
-double LineSearch(double alpha, double step_size,
+arma::field<mat> LineSearch(double alpha, double step_size,
                   arma::vec y,
                   arma::cube x, arma::mat beta, double intercept,
                   int n, int J, int p,
-                  arma::vec weights) {
+                  arma::vec weights,
+                  arma::mat x_full, arma::vec act_set) {
 
   arma::field<mat> derv = GetLogisticDerv(y, x, beta, intercept,
-                                          n, J, p);
-  double g_x = GetLogistic(y,x, beta, intercept,
-                           n, J, p);
+                                          n, J, p, x_full, act_set);
+  double f_x = GetLogistic(y,x, beta, intercept,
+                           n, J, p, act_set);
 
+  arma::field<mat> temp_z;
   bool convg = false;
   while(!convg) {
-    arma::field<mat> temp1 = GetGt(y,x, beta, intercept,
-                                   n, J, p, step_size,
-                                   weights);
-    double temp2 = accu(derv(0) % temp1(0)) + accu(derv(1) % temp1(1));
-    double norm_temp = accu(square(temp1(0))) + accu(square(temp1(1)));
-    double temp_rhs = g_x - (step_size * temp2) + (step_size/2) * norm_temp;
+    temp_z =  GetZ(beta, intercept, derv, n, J, p, step_size, weights, act_set);
 
-    double temp_lhs =  GetLogistic(y,x,
-                                   beta - (step_size * temp1(1)),
-                                   intercept - (step_size * as_scalar(temp1(0))),
-                                   n, J, p);
+    double temp_norm = accu(square(temp_z(1) - beta)) + as_scalar(square(temp_z(0) - intercept));
+    double temp_rhs = f_x
+      + dot(temp_z(0) - intercept, derv(0)) + dot(temp_z(1) - beta, derv(1))
+      + ((1/(2 * step_size)) * temp_norm);
 
+    double temp_lhs =  GetLogistic(y,x, temp_z(1),
+                                   as_scalar(temp_z(0)),
+                                   n, J, p, act_set);
     if(temp_lhs <= temp_rhs) {
       convg = true;
     } else {
       step_size = alpha * step_size;
     }
-
   }
 
-  return step_size;
-
+  return temp_z;
 }
 
-arma::field<mat> ProxGradStep(arma::vec y,
-                              arma::cube x, arma::mat beta, double intercept,
-                              int n, int J, int p,
-                              double step_size,
-                              arma::vec weights) {
 
-  arma::field<mat> derv = GetLogisticDerv(y, x, beta, intercept,
-                                          n, J, p);
-
-  arma::mat derv2 = beta - step_size * derv(1);
-
-  arma::mat ans(J, p);
-  for(int i = 0; i < p; i++) {
-    ans.col(i) = GetProxOne(derv2.col(i), step_size * weights);
-  }
-
-
-  // A field (in R this would be a list) object to return.
-  arma::field<mat> final_ans(2);
-  final_ans(0) = intercept - step_size * derv(0);
-  final_ans(1) = ans;
-  return final_ans;
-}
+// arma::field<mat> ProxGradStep(arma::vec y,
+//                               arma::cube x, arma::mat beta, double intercept,
+//                               int n, int J, int p,
+//                               double step_size,
+//                               arma::vec weights) {
+//
+//   arma::field<mat> derv = GetLogisticDerv(y, x, beta, intercept,
+//                                           n, J, p);
+//
+//   arma::mat derv2 = beta - step_size * derv(1);
+//
+//   arma::mat ans(J, p);
+//   for(int i = 0; i < p; i++) {
+//     ans.col(i) = GetProxOne(derv2.col(i), step_size * weights);
+//   }
+//
+//
+//   // A field (in R this would be a list) object to return.
+//   arma::field<mat> final_ans(2);
+//   final_ans(0) = intercept - step_size * derv(0);
+//   final_ans(1) = ans;
+//   return final_ans;
+// }
 
 
 double max_lam_logistic(cube X, vec y,
@@ -411,7 +416,6 @@ double max_lam_logistic(cube X, vec y,
       temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
     } else {
       temp_lam_max =  abs(temp2)/ (ak * alpha);
-
       temp_lam_max(0) = fabs(temp2(0));
     }
     max_lam_values(i) = max(temp_lam_max);
@@ -438,7 +442,6 @@ List FitAdditiveLogistic2(arma::vec y,
   // Initialize some objects.
   arma::cube x_mats(n, J, p);
   arma::cube r_mats(J, J, p);
-
 
   // This loop does the QR decompositon and generates the Q, R matrices.
   // It also helps us find the maximum lambda value when it is not specified.
@@ -479,6 +482,8 @@ List FitAdditiveLogistic2(arma::vec y,
   }
 
 
+  arma::mat x_full = reshape(x_mats, n, p * J, 1);
+
   // If the user left initial beta == NULL, then the initial estimate is all
   // zeros which means that we don't need to do all the matrix multiplication.
   arma::mat x_beta(n, p, fill::zeros);
@@ -506,6 +511,11 @@ List FitAdditiveLogistic2(arma::vec y,
   arma::vec counters(nlam);
   arma::field<vec> loss_funcs(nlam, 1);
 
+
+  // Initialize the active.set
+  arma::vec act_set(p, fill::zeros);
+  arma::vec all_act(p, fill::ones);
+
   // Remember now, for logistic regression we have
   // 2 loops
   // loop-1 (Outer Loop): Decrement lambda values.
@@ -521,7 +531,7 @@ List FitAdditiveLogistic2(arma::vec y,
     vec temp_new_obj(1);
 
     double obj =  GetLogistic(y, x_mats, beta, intercept,
-                                n, J, p) + get_penalty(temp_weights, beta, p);
+                                n, J, p, act_set) + get_penalty(temp_weights, beta, p);
     obj_val(0) = obj;
     vec obj_val2 = obj_val;
 
@@ -530,22 +540,16 @@ List FitAdditiveLogistic2(arma::vec y,
       double old_intercept = intercept;
       arma::mat old_beta(beta.begin(), J, p, true);
 
-      step_size = LineSearch(lineSrch_alpha, step_size,
-                             y, x_mats, beta, intercept,
-                             n, J, p,
-                             temp_weights);
-      //Rcout << "nlam : " << i<<" Stepsize is : "<< step_size <<"\n";
-
-      field<mat> temp_ans = ProxGradStep(y, x_mats, beta, intercept,
-                                         n, J, p,
-                                         step_size,
-                                         temp_weights);
+      field<mat> temp_ans = LineSearch(lineSrch_alpha, step_size,
+                             y, x_mats, beta, intercept, n, J, p,
+                             temp_weights,
+                             x_full, act_set);
 
       intercept = as_scalar(temp_ans(0));
       beta = temp_ans(1);
 
       double new_obj = GetLogistic(y, x_mats, beta, intercept,
-                                  n, J, p) + get_penalty(temp_weights, beta, p);
+                                  n, J, p, act_set) + get_penalty(temp_weights, beta, p);
       temp_new_obj(0) = new_obj;
       obj_val2 = join_cols(obj_val2, temp_new_obj);
 
@@ -556,9 +560,18 @@ List FitAdditiveLogistic2(arma::vec y,
       //Rcout << "Now the problem\n";
       // Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
       if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
-        beta_ans.slice(i) = beta;
-        intercept_ans(i) = intercept;
-        converged_final = true;
+        arma::vec temp_old_act = act_set;
+        arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
+                                         y, x_mats, beta, intercept, n, J, p,
+                                         temp_weights,
+                                         x_full, all_act);
+        uvec temp_active = find(temp_ans2(1).row(0));
+        act_set(temp_active).fill(1);
+        if(norm(act_set - temp_old_act) < 1e-15) {
+          beta_ans.slice(i) = beta;
+          intercept_ans(i) = intercept;
+          converged_final = true;
+        }
         counter = counter + 1;
 
       } else {
@@ -567,7 +580,6 @@ List FitAdditiveLogistic2(arma::vec y,
         if(counter == max_iter) {
           beta_ans.slice(i) = beta;
           intercept_ans(i) = intercept;
-          //          Rcout << "No convergence for lambda: " << i << "\n";
 
           Function warning("warning");
           warning("Function did not converge");
