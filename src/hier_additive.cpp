@@ -310,7 +310,7 @@ arma::field<mat> GetZ(arma::mat beta, double intercept,
   // where the objective is (f + g), t is the step_size and x_k is the k^th
   // iteration.
 
-  arma::mat inside = beta - step_size * derv(1);
+  arma::mat inside = beta - (step_size * derv(1));
 
   arma::mat ans(J, p, fill::zeros);
   for(int i = 0; i < p; i++) {
@@ -346,9 +346,11 @@ arma::field<mat> LineSearch(double alpha, double step_size,
     temp_z =  GetZ(beta, intercept, derv, n, J, p, step_size, weights, act_set);
 
     double temp_norm = accu(square(temp_z(1) - beta)) + as_scalar(square(temp_z(0) - intercept));
-    double temp_rhs = f_x
-      + dot(temp_z(0) - intercept, derv(0)) + dot(temp_z(1) - beta, derv(1))
+    double temp_rhs = f_x;
+    double temp2 = ((as_scalar(temp_z(0)) - intercept) * as_scalar(derv(0)) ) + accu((temp_z(1) - beta) % derv(1))
       + ((1/(2 * step_size)) * temp_norm);
+    //Rcout << temp2<<"\n";
+    temp_rhs = f_x + temp2;
 
     double temp_lhs =  GetLogistic(y,x, temp_z(1),
                                    as_scalar(temp_z(0)),
@@ -360,6 +362,7 @@ arma::field<mat> LineSearch(double alpha, double step_size,
     }
   }
 
+  Rcout << step_size<<"\n";
   return temp_z;
 }
 
@@ -513,7 +516,7 @@ List FitAdditiveLogistic2(arma::vec y,
 
 
   // Initialize the active.set
-  arma::vec act_set(p, fill::zeros);
+  arma::vec act_set(p, fill::ones);
   arma::vec all_act(p, fill::ones);
 
   // Remember now, for logistic regression we have
@@ -557,21 +560,22 @@ List FitAdditiveLogistic2(arma::vec y,
       temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
 
-      //Rcout << "Now the problem\n";
-      // Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
+      //Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
+      Rcout << "nlam"<< i << " : "<< obj - new_obj   << "\n";
+      obj = new_obj;
       if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
-        arma::vec temp_old_act = act_set;
-        arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
-                                         y, x_mats, beta, intercept, n, J, p,
-                                         temp_weights,
-                                         x_full, all_act);
-        uvec temp_active = find(temp_ans2(1).row(0));
-        act_set(temp_active).fill(1);
-        if(norm(act_set - temp_old_act) < 1e-15) {
+//         arma::vec temp_old_act = act_set;
+//         arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
+//                                          y, x_mats, beta, intercept, n, J, p,
+//                                          temp_weights,
+//                                          x_full, all_act);
+//         uvec temp_active = find(temp_ans2(1).row(0));
+//         act_set(temp_active).fill(1);
+//         if(norm(act_set - temp_old_act) < 1) {
           beta_ans.slice(i) = beta;
           intercept_ans(i) = intercept;
           converged_final = true;
-        }
+         // }
         counter = counter + 1;
 
       } else {

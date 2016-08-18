@@ -217,7 +217,6 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 
   } else {
 
-
     if(is.na(max.lambda)) {
       #print("IS NULL HERES")
       # Obtain proportion of y with status 1.
