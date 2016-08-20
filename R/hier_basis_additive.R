@@ -33,6 +33,7 @@
 #' @param m.const The order of smoothness, usually not more than 3 (default).
 #' @param max.iter Maximum number of iterations for block coordinate descent.
 #' @param tol Tolerance for block coordinate descent, stopping precision.
+#' @param active.set Specify if the algorithm should use an active set strategy.
 #' @param type Specifies type of regression, "gaussian" is for linear regression with continous
 #' response and "binomial" is for logistic regression with binary response.
 #' @param intercept For logistic regression, this specifies an initial value for
@@ -41,6 +42,8 @@
 #' @param line.search.par For logistic regression, the parameter for the line search
 #' within the proximal gradient descent algorithm, this must be within the interval \eqn{(0,\, 1)}.
 #' @param step.size For logistic regression, an initial step size for the line search algorithm.
+#' @param use.fista For using a proximal gradient descent algorithm, this specifies the use
+#' of accelarated proximal gradient descent.
 #'
 #' @return
 #' An object of class addHierBasis with the following elements:
@@ -115,13 +118,14 @@
 #'
 #'
 AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
-                              lam.min.ratio = 1e-4, nlam = 50,
+                              lam.min.ratio = 1e-7, nlam = 50,
                               beta.mat = NULL,
                               alpha = NULL, m.const = 3,
-                              max.iter = 100, tol = 1e-4,
+                              max.iter = 100, tol = 1e-4, active.set = TRUE,
                               type = c("gaussian", "binomial"),
                               intercept = NULL, line.search.par = 0.5,
-                              step.size = 1) {
+                              step.size = 1,
+                              use.fista = TRUE) {
 
   # Initialize sample size and some other values.
   n <- length(y)
@@ -259,7 +263,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                                alpha = alpha, tol = tol,
                                p, J, n, mean(y), nlam, max_iter = max.iter,
                                beta_is_zero = beta_is_zero,
-                               step_size = step.size, lineSrch_alpha = line.search.par)
+                               step_size = step.size, lineSrch_alpha = line.search.par,
+                               use_act_set = active.set, fista = use.fista)
 
     beta2 <-mod$beta
 

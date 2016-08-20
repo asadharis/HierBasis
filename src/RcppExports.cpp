@@ -45,8 +45,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // FitAdditiveLogistic2
-List FitAdditiveLogistic2(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, double ybar, int nlam, double max_iter, bool beta_is_zero, double step_size, double lineSrch_alpha);
-RcppExport SEXP HierBasis_FitAdditiveLogistic2(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP ybarSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP step_sizeSEXP, SEXP lineSrch_alphaSEXP) {
+List FitAdditiveLogistic2(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, double ybar, int nlam, double max_iter, bool beta_is_zero, double step_size, double lineSrch_alpha, bool use_act_set, bool fista);
+RcppExport SEXP HierBasis_FitAdditiveLogistic2(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP ybarSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP step_sizeSEXP, SEXP lineSrch_alphaSEXP, SEXP use_act_setSEXP, SEXP fistaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -69,7 +69,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type beta_is_zero(beta_is_zeroSEXP);
     Rcpp::traits::input_parameter< double >::type step_size(step_sizeSEXP);
     Rcpp::traits::input_parameter< double >::type lineSrch_alpha(lineSrch_alphaSEXP);
-    __result = Rcpp::wrap(FitAdditiveLogistic2(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha));
+    Rcpp::traits::input_parameter< bool >::type use_act_set(use_act_setSEXP);
+    Rcpp::traits::input_parameter< bool >::type fista(fistaSEXP);
+    __result = Rcpp::wrap(FitAdditiveLogistic2(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha, use_act_set, fista));
     return __result;
 END_RCPP
 }

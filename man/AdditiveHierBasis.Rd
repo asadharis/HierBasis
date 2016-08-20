@@ -6,8 +6,9 @@
 \usage{
 AdditiveHierBasis(x, y, nbasis = 10, max.lambda = NULL,
   lam.min.ratio = 1e-04, nlam = 50, beta.mat = NULL, alpha = NULL,
-  m.const = 3, max.iter = 100, tol = 1e-04, type = c("gaussian",
-  "binomial"), intercept = NULL, line.search.par = 0.5, step.size = 1)
+  m.const = 3, max.iter = 100, tol = 1e-04, active.set = TRUE,
+  type = c("gaussian", "binomial"), intercept = NULL,
+  line.search.par = 0.5, step.size = 1, use.fista = TRUE)
 }
 \arguments{
 \item{x}{An \eqn{n \times p}{n x p} matrix of covariates.}
@@ -35,6 +36,8 @@ the sparsity penalty and the hierarchical penalty. Default is 0.5.}
 
 \item{tol}{Tolerance for block coordinate descent, stopping precision.}
 
+\item{active.set}{Specify if the algorithm should use an active set strategy.}
+
 \item{type}{Specifies type of regression, "gaussian" is for linear regression with continous
 response and "binomial" is for logistic regression with binary response.}
 
@@ -46,6 +49,9 @@ the null model obtained by \code{glm} function.}
 within the proximal gradient descent algorithm, this must be within the interval \eqn{(0,\, 1)}.}
 
 \item{step.size}{For logistic regression, an initial step size for the line search algorithm.}
+
+\item{use.fista}{For using a proximal gradient descent algorithm, this specifies the use
+of accelarated proximal gradient descent.}
 }
 \value{
 An object of class addHierBasis with the following elements:

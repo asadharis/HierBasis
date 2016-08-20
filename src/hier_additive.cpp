@@ -360,73 +360,8 @@ arma::field<mat> LineSearch(double alpha, double step_size,
       step_size = alpha * step_size;
     }
   }
-
-  Rcout << step_size<<"\n";
   return temp_z;
 }
-
-
-// arma::field<mat> ProxGradStep(arma::vec y,
-//                               arma::cube x, arma::mat beta, double intercept,
-//                               int n, int J, int p,
-//                               double step_size,
-//                               arma::vec weights) {
-//
-//   arma::field<mat> derv = GetLogisticDerv(y, x, beta, intercept,
-//                                           n, J, p);
-//
-//   arma::mat derv2 = beta - step_size * derv(1);
-//
-//   arma::mat ans(J, p);
-//   for(int i = 0; i < p; i++) {
-//     ans.col(i) = GetProxOne(derv2.col(i), step_size * weights);
-//   }
-//
-//
-//   // A field (in R this would be a list) object to return.
-//   arma::field<mat> final_ans(2);
-//   final_ans(0) = intercept - step_size * derv(0);
-//   final_ans(1) = ans;
-//   return final_ans;
-// }
-
-//
-// double max_lam_logistic(cube X, vec y,
-//                         int p, double alpha,
-//                         vec ak) {
-//   // A helper function for the logistic regression case.
-//   // This function just generates the maximum lambda value used for the
-//   // algorithm given a design array/cue.
-//   mat xbar = mean(X, 0);
-//   Rcout << "problem here" <<"\n";
-//   cube sub_x(accu(y), X.n_cols, X.n_slices);
-//
-//   double mu = mean(y);
-//   vec max_lam_values(p);
-//
-//   for(int i = 0; i < p; i++) {
-//     mat temp  = X.slice(i);
-//     mat sub_temp = temp.rows(find(y == 1));
-//
-//     //Rcout << size(mean(temp)) <<", " << size(mean(sub_temp));
-//     vec temp2 = mu * trans(mean(temp) - mean(sub_temp));
-//     vec temp_lam_max;
-//
-//     if(R_IsNA(alpha)) {
-//       temp_lam_max =  sqrt(abs(temp2)/ ak);
-//       // This is obtained by solving the inequality
-//       // lambda^2 + lambda >= |v_1|.
-//       temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
-//     } else {
-//       temp_lam_max =  abs(temp2)/ (ak * alpha);
-//       temp_lam_max(0) = fabs(temp2(0));
-//     }
-//     max_lam_values(i) = max(temp_lam_max);
-//   }
-//
-//   return max(max_lam_values);
-//
-// }
 
 
 // [[Rcpp::export]]
@@ -439,7 +374,8 @@ List FitAdditiveLogistic2(arma::vec y,
                           double tol, int p, int J, int n, double ybar,
                           int nlam, double max_iter,
                           bool beta_is_zero,
-                          double step_size, double lineSrch_alpha) {
+                          double step_size, double lineSrch_alpha,
+                          bool use_act_set, bool fista) {
 
 
   // Initialize some objects.
@@ -523,8 +459,8 @@ List FitAdditiveLogistic2(arma::vec y,
   arma::vec intercept_ans(nlam);
 
 
-  double temp_norm_old;
-  double temp_norm_new;
+  //double temp_norm_old;
+  //double temp_norm_new;
   //double change;
 
   // Initialize some objects.
@@ -535,8 +471,14 @@ List FitAdditiveLogistic2(arma::vec y,
   arma::field<vec> loss_funcs(nlam, 1);
 
 
+  arma::vec act_set(p);
   // Initialize the active.set
-  arma::vec act_set(p, fill::zeros);
+  if(use_act_set) {
+    act_set.zeros();
+  } else {
+    act_set.ones();
+  }
+
   arma::vec all_act(p, fill::ones);
 
   // Remember now, for logistic regression we have
@@ -558,18 +500,46 @@ List FitAdditiveLogistic2(arma::vec y,
     obj_val(0) = obj;
     vec obj_val2 = obj_val;
 
+    double old_intercept = intercept;
+    arma::mat old_beta(beta.begin(), J, p, true);
+
     // Now we start loop 2: Do the prox grad step
     while(counter < max_iter && !converged_final) {
-      double old_intercept = intercept;
-      arma::mat old_beta(beta.begin(), J, p, true);
+      //Rcout << "nlam: " <<i <<" and "  << counter <<"\n";
+      if(fista) {
+        // First we need to convert the counter to a double to be
+        // able to do the devision.
+        double count_doub = counter;
 
-      field<mat> temp_ans = LineSearch(lineSrch_alpha, step_size,
-                             y, x_mats, beta, intercept, n, J, p,
-                             temp_weights,
-                             x_full, act_set);
+        arma::mat extra_beta = beta +
+          ((count_doub + 1)/(count_doub + 4)) * (beta - old_beta);
+        double extra_intercept = intercept +
+          ((count_doub + 1)/(count_doub + 4)) * (intercept - old_intercept);
 
-      intercept = as_scalar(temp_ans(0));
-      beta = temp_ans(1);
+
+        old_beta = beta;
+        old_intercept = intercept;
+
+        field<mat> temp_ans = LineSearch(lineSrch_alpha, step_size,
+                                         y, x_mats, extra_beta, extra_intercept, n, J, p,
+                                         temp_weights,
+                                         x_full, act_set);
+        intercept = as_scalar(temp_ans(0));
+        beta = temp_ans(1);
+
+
+      } else {
+        old_beta = beta;
+        old_intercept = intercept;
+
+        field<mat> temp_ans = LineSearch(lineSrch_alpha, step_size,
+                                         y, x_mats, beta, intercept, n, J, p,
+                                         temp_weights,
+                                         x_full, act_set);
+
+        intercept = as_scalar(temp_ans(0));
+        beta = temp_ans(1);
+      }
 
       double new_obj = GetLogistic(y, x_mats, beta, intercept,
                                   n, J, p, act_set) + get_penalty(temp_weights, beta, p);
@@ -577,28 +547,35 @@ List FitAdditiveLogistic2(arma::vec y,
       obj_val2 = join_cols(obj_val2, temp_new_obj);
 
       // Obtain norm of the updated parameter set.
-      temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
-      temp_norm_old = accu(square(beta)) + pow(intercept, 2);
+//       temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
+//       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
 
       //Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
-      Rcout << "nlam"<< i << " : "<< obj - new_obj   << "\n";
-      obj = new_obj;
-      if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
-        arma::vec temp_old_act = act_set;
-        arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
-                                         y, x_mats, beta, intercept, n, J, p,
-                                         temp_weights,
-                                         x_full, all_act);
-        uvec temp_active = find(temp_ans2(1).row(0));
-        act_set(temp_active).fill(1);
-        if(norm(act_set - temp_old_act) < 1) {
+      // Rcout << "nlam"<< i << " : "<< obj - new_obj   << "\n";
+      if(obj - new_obj < tol) {
+        if(use_act_set) {
+          arma::vec temp_old_act = act_set;
+          arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
+                                                  y, x_mats, beta, intercept, n, J, p,
+                                                  temp_weights,
+                                                  x_full, all_act);
+          uvec temp_active = find(temp_ans2(1).row(0));
+          act_set(temp_active).fill(1);
+          if(norm(act_set - temp_old_act) < 1) {
+            beta_ans.slice(i) = beta;
+            intercept_ans(i) = intercept;
+            converged_final = true;
+          }
+          counter = counter + 1;
+        } else {
           beta_ans.slice(i) = beta;
           intercept_ans(i) = intercept;
           converged_final = true;
-         }
-        counter = counter + 1;
+          counter = counter + 1;
+        }
 
       } else {
+        obj = new_obj;
         counter = counter + 1;
 
         if(counter == max_iter) {
