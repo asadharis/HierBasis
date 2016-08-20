@@ -217,37 +217,37 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 
   } else {
 
-    if(is.na(max.lambda)) {
-      #print("IS NULL HERES")
-      # Obtain proportion of y with status 1.
-      mu <- mean(y)
-      # Obtain mean of the columns of the FULL n*(pJ) design matrix.
-      # We can actually keep things in our array notation
-      xbar.full <- apply(design.array, c(2,3), mean)
-
-      # We now obtain the means of the columns of the design matrix
-      # with only the rows for which (y==1).
-      xbar.ones <- apply(design.array[which(y == 1), , ], c(2,3), mean)
-
-      # Finally this expression gives us the derivative of the logistic loss
-      # at beta = 0
-      tempv <- mu * (xbar.full - xbar.ones)
-
-      # Now we calculate the max lambda to get a zero beta
-      lam.max <- apply(tempv, 2, function(x) {
-        if(is.na(alpha)) {
-          temp <- sqrt(abs(x)/ak)
-          temp[1] <- 0.5 * (sqrt(4 * abs(x[1]) + 1) - 1);
-        } else {
-          temp <- abs(x)/ (ak * alpha)
-          temp[1] <- abs(x[1])
-        }
-        max(temp)
-        })
-
-      max.lambda <- max(lam.max)
-      #stop("Max lambda value needs to be specified for logistic regression.")
-    }
+#     if(is.na(max.lambda)) {
+#       #print("IS NULL HERES")
+#       # Obtain proportion of y with status 1.
+#       mu <- mean(y)
+#       # Obtain mean of the columns of the FULL n*(pJ) design matrix.
+#       # We can actually keep things in our array notation
+#       xbar.full <- apply(design.array, c(2,3), mean)
+#
+#       # We now obtain the means of the columns of the design matrix
+#       # with only the rows for which (y==1).
+#       xbar.ones <- apply(design.array[which(y == 1), , ], c(2,3), mean)
+#
+#       # Finally this expression gives us the derivative of the logistic loss
+#       # at beta = 0
+#       tempv <- mu * (xbar.full - xbar.ones)
+#
+#       # Now we calculate the max lambda to get a zero beta
+#       lam.max <- apply(tempv, 2, function(x) {
+#         if(is.na(alpha)) {
+#           temp <- sqrt(abs(x)/ak)
+#           temp[1] <- 0.5 * (sqrt(4 * abs(x[1]) + 1) - 1);
+#         } else {
+#           temp <- abs(x)/ (ak * alpha)
+#           temp[1] <- abs(x[1])
+#         }
+#         max(temp)
+#         })
+#
+#       max.lambda <- max(lam.max)
+#       #stop("Max lambda value needs to be specified for logistic regression.")
+#     }
 
     # We need to re-label the response as (-1, 1)
     tempy <- y
@@ -257,7 +257,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                                intercept = intercept,
                                max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
                                alpha = alpha, tol = tol,
-                               p, J, n, nlam, max_iter = max.iter,
+                               p, J, n, mean(y), nlam, max_iter = max.iter,
                                beta_is_zero = beta_is_zero,
                                step_size = step.size, lineSrch_alpha = line.search.par)
 

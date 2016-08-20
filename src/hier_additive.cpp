@@ -264,7 +264,7 @@ double get_penalty(vec wgts, mat beta, int p) {
 
   mat rev_beta = flipud(beta);
   mat norms = sqrt(cumsum(square(rev_beta)));
-  norms.each_col() %= wgts;
+  norms.each_col() %= flipud(wgts);
   return accu(norms);
 }
 
@@ -349,7 +349,6 @@ arma::field<mat> LineSearch(double alpha, double step_size,
     double temp_rhs = f_x;
     double temp2 = ((as_scalar(temp_z(0)) - intercept) * as_scalar(derv(0)) ) + accu((temp_z(1) - beta) % derv(1))
       + ((1/(2 * step_size)) * temp_norm);
-    //Rcout << temp2<<"\n";
     temp_rhs = f_x + temp2;
 
     double temp_lhs =  GetLogistic(y,x, temp_z(1),
@@ -391,42 +390,43 @@ arma::field<mat> LineSearch(double alpha, double step_size,
 //   return final_ans;
 // }
 
-
-double max_lam_logistic(cube X, vec y,
-                        int p, double alpha,
-                        vec ak) {
-  // A helper function for the logistic regression case.
-  // This function just generates the maximum lambda value used for the
-  // algorithm given a design array/cue.
-  mat xbar = mean(X, 0);
-  cube sub_x(accu(y), X.n_cols, X.n_slices);
-
-  double mu = mean(y);
-  vec max_lam_values(p);
-
-  for(int i = 0; i < p; i++) {
-    mat temp  = X.slice(i);
-    mat sub_temp = temp.rows(find(y == 1));
-
-    //Rcout << size(mean(temp)) <<", " << size(mean(sub_temp));
-    vec temp2 = mu * trans(mean(temp) - mean(sub_temp));
-    vec temp_lam_max;
-
-    if(R_IsNA(alpha)) {
-      temp_lam_max =  sqrt(abs(temp2)/ ak);
-      // This is obtained by solving the inequality
-      // lambda^2 + lambda >= |v_1|.
-      temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
-    } else {
-      temp_lam_max =  abs(temp2)/ (ak * alpha);
-      temp_lam_max(0) = fabs(temp2(0));
-    }
-    max_lam_values(i) = max(temp_lam_max);
-  }
-
-  return max(max_lam_values);
-
-}
+//
+// double max_lam_logistic(cube X, vec y,
+//                         int p, double alpha,
+//                         vec ak) {
+//   // A helper function for the logistic regression case.
+//   // This function just generates the maximum lambda value used for the
+//   // algorithm given a design array/cue.
+//   mat xbar = mean(X, 0);
+//   Rcout << "problem here" <<"\n";
+//   cube sub_x(accu(y), X.n_cols, X.n_slices);
+//
+//   double mu = mean(y);
+//   vec max_lam_values(p);
+//
+//   for(int i = 0; i < p; i++) {
+//     mat temp  = X.slice(i);
+//     mat sub_temp = temp.rows(find(y == 1));
+//
+//     //Rcout << size(mean(temp)) <<", " << size(mean(sub_temp));
+//     vec temp2 = mu * trans(mean(temp) - mean(sub_temp));
+//     vec temp_lam_max;
+//
+//     if(R_IsNA(alpha)) {
+//       temp_lam_max =  sqrt(abs(temp2)/ ak);
+//       // This is obtained by solving the inequality
+//       // lambda^2 + lambda >= |v_1|.
+//       temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
+//     } else {
+//       temp_lam_max =  abs(temp2)/ (ak * alpha);
+//       temp_lam_max(0) = fabs(temp2(0));
+//     }
+//     max_lam_values(i) = max(temp_lam_max);
+//   }
+//
+//   return max(max_lam_values);
+//
+// }
 
 
 // [[Rcpp::export]]
@@ -436,7 +436,7 @@ List FitAdditiveLogistic2(arma::vec y,
                           arma::mat beta, double intercept,
                           double max_lambda, double lam_min_ratio,
                           double alpha,
-                          double tol, int p, int J, int n,
+                          double tol, int p, int J, int n, double ybar,
                           int nlam, double max_iter,
                           bool beta_is_zero,
                           double step_size, double lineSrch_alpha) {
@@ -445,6 +445,8 @@ List FitAdditiveLogistic2(arma::vec y,
   // Initialize some objects.
   arma::cube x_mats(n, J, p);
   arma::cube r_mats(J, J, p);
+
+  arma::vec max_lam_values(p);
 
   // This loop does the QR decompositon and generates the Q, R matrices.
   // It also helps us find the maximum lambda value when it is not specified.
@@ -461,10 +463,28 @@ List FitAdditiveLogistic2(arma::vec y,
 
     x_mats.slice(i) = temp_x_mat;
     r_mats.slice(i) = temp_r_mat;
+
+    if(R_IsNA(max_lambda)) {
+      mat sub_temp = temp_x_mat.rows(find(y == 1));
+
+      vec temp2 = ybar * trans(mean(temp_x_mat) - mean(sub_temp));
+      vec temp_lam_max;
+
+      if(R_IsNA(alpha)) {
+        temp_lam_max =  sqrt(abs(temp2)/ ak);
+        // This is obtained by solving the inequality
+        // lambda^2 + lambda >= |v_1|.
+        temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
+      } else {
+        temp_lam_max =  abs(temp2)/ (ak * alpha);
+        temp_lam_max(0) = fabs(temp2(0));
+      }
+      max_lam_values(i) = max(temp_lam_max);
+    }
   }
 
   if(R_IsNA(max_lambda)) {
-    max_lambda = max_lam_logistic(x_mats, y, p, alpha, ak);
+    max_lambda = max(max_lam_values);
   }
 
   // Generate the full lambda sequence.
@@ -516,7 +536,7 @@ List FitAdditiveLogistic2(arma::vec y,
 
 
   // Initialize the active.set
-  arma::vec act_set(p, fill::ones);
+  arma::vec act_set(p, fill::zeros);
   arma::vec all_act(p, fill::ones);
 
   // Remember now, for logistic regression we have
@@ -564,18 +584,18 @@ List FitAdditiveLogistic2(arma::vec y,
       Rcout << "nlam"<< i << " : "<< obj - new_obj   << "\n";
       obj = new_obj;
       if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
-//         arma::vec temp_old_act = act_set;
-//         arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
-//                                          y, x_mats, beta, intercept, n, J, p,
-//                                          temp_weights,
-//                                          x_full, all_act);
-//         uvec temp_active = find(temp_ans2(1).row(0));
-//         act_set(temp_active).fill(1);
-//         if(norm(act_set - temp_old_act) < 1) {
+        arma::vec temp_old_act = act_set;
+        arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,
+                                         y, x_mats, beta, intercept, n, J, p,
+                                         temp_weights,
+                                         x_full, all_act);
+        uvec temp_active = find(temp_ans2(1).row(0));
+        act_set(temp_active).fill(1);
+        if(norm(act_set - temp_old_act) < 1) {
           beta_ans.slice(i) = beta;
           intercept_ans(i) = intercept;
           converged_final = true;
-         // }
+         }
         counter = counter + 1;
 
       } else {
