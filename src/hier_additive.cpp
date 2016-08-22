@@ -459,8 +459,8 @@ List FitAdditiveLogistic2(arma::vec y,
   arma::vec intercept_ans(nlam);
 
 
-  //double temp_norm_old;
-  //double temp_norm_new;
+  double temp_norm_old;
+  double temp_norm_new;
   //double change;
 
   // Initialize some objects.
@@ -547,12 +547,12 @@ List FitAdditiveLogistic2(arma::vec y,
       obj_val2 = join_cols(obj_val2, temp_new_obj);
 
       // Obtain norm of the updated parameter set.
-//       temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
-//       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
+       temp_norm_new = accu(square(beta - old_beta)) + pow(intercept - old_intercept, 2);
+       temp_norm_old = accu(square(beta)) + pow(intercept, 2);
 
       //Rcout << "nlam"<< i << " : "<< pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5)  << "\n";
       // Rcout << "nlam"<< i << " : "<< obj - new_obj   << "\n";
-      if(obj - new_obj < tol) {
+      if(pow(temp_norm_new, 0.5)/pow(temp_norm_old, 0.5) < tol) {
         if(use_act_set) {
           arma::vec temp_old_act = act_set;
           arma::field<mat> temp_ans2 = LineSearch(lineSrch_alpha, step_size,

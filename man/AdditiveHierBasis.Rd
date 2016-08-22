@@ -5,7 +5,7 @@
 \title{Estimating Sparse Additive Models}
 \usage{
 AdditiveHierBasis(x, y, nbasis = 10, max.lambda = NULL,
-  lam.min.ratio = 1e-04, nlam = 50, beta.mat = NULL, alpha = NULL,
+  lam.min.ratio = 0.01, nlam = 50, beta.mat = NULL, alpha = NULL,
   m.const = 3, max.iter = 100, tol = 1e-04, active.set = TRUE,
   type = c("gaussian", "binomial"), intercept = NULL,
   line.search.par = 0.5, step.size = 1, use.fista = TRUE)

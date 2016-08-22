@@ -118,7 +118,7 @@
 #'
 #'
 AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
-                              lam.min.ratio = 1e-7, nlam = 50,
+                              lam.min.ratio = 1e-2, nlam = 50,
                               beta.mat = NULL,
                               alpha = NULL, m.const = 3,
                               max.iter = 100, tol = 1e-4, active.set = TRUE,
