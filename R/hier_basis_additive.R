@@ -589,6 +589,7 @@ plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
   lin.inter <- approx(x.temp, f.hat)
   plot(lin.inter$x, lin.inter$y, ...)
 
+  invisible(lin.inter)
 }
 
 
