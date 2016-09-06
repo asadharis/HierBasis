@@ -55,6 +55,7 @@ arma::sp_mat GetProx(arma::vec y,
 }
 
 
+
 // [[Rcpp::export]]
 List solveHierBasis(arma::mat design_mat,
                   arma::vec y,
@@ -124,13 +125,120 @@ List solveHierBasis(arma::mat design_mat,
   // Take the inverse of the R_mat to obtain solution on the original scale
   arma::mat beta_hat2 = solve(trimatu(R_mat), mat(beta_hat));
 
-  return List::create(Named("beta") = beta_hat2,
-                      Named("lambdas") = lambdas);
+  ///////////// Removed after version 0.7.1, moved to a different R function.//////////
 
+  // We also obtain the DOF for the different methods.
+  //arma::vec dof = getDof(x_mat, weights, beta_hat, nlam, n);
+
+  //////////// Removed after version 0.7.1, moved to a different R function.//////////
+
+
+  // Return fitted values.
+  arma::mat yhat = x_mat * mat(beta_hat);
+
+  return List::create(Named("beta") = beta_hat2,
+                      Named("lambdas") = lambdas,
+                      //Named("dof") = dof,
+                      Named("yhat") = yhat,
+                      Named(".beta_ortho") = beta_hat);
 }
 
 
 
+// [[Rcpp::export]]
+arma::vec getDof(arma::mat design_mat, arma::mat weights,
+                 arma::sp_mat beta, int nlam, int n) {
+
+  // This function returns the dof of the fitted models for univariate
+  // HierBasis.
+  //
+  // Args:
+  //    x_mat: A design matrix of size n * J_n, where J_n is number of
+  //                basis functions.
+  //    weights: The matrix of weights for the hierBasis penalty.
+  //    beta: The solutions to the algorithm, this is not the beta on the original
+  //          scale. To obtain beta on the original scale we would need to do R^{-1} beta.
+  //    nlam: Number of lambda values.
+  // Returns:
+  //    ans: Vector of dof of size nlam.
+
+
+  // Generate the x_mat, this is our orthonormal design matrix.
+  arma::mat x_mat, R_mat;
+  arma::qr_econ(x_mat, R_mat, design_mat);
+
+  // The x_mat is the  same matrix used in the algorithm for
+  // SolveHierBasis.
+  // The beta parameter passed here is the orthogonalized beta,
+  // i.e. this is R * beta where R is the matrix from the QR decomposition.
+  x_mat = x_mat * sqrt(n);
+
+  // Initialize the vector for storing the dof for
+  // each lambda value.
+  arma::vec ans(nlam, fill::zeros);
+
+  // We then convert sparse_matrix to matrix for calculations.
+  arma::mat full_beta(beta);
+
+  // Begin loop for each value of lambda we calculate the DOF
+  for(int i = 0; i < nlam; ++i) {
+
+    // Fisrst we take the subvector of beta.
+    arma::vec temp_beta = full_beta.col(i);
+    temp_beta = temp_beta.elem(find(temp_beta));
+
+    // Then the submatrix of x_mat.
+    arma::mat temp_xmat = x_mat.cols(find(temp_beta));
+
+
+    // Finally the vector of weights
+    arma::vec temp_wgt = weights.col(i);
+    temp_wgt = temp_wgt.elem(find(temp_beta));
+
+
+    int temp_size = temp_beta.n_elem;
+    arma::mat inner_mat = eye<mat>(temp_size, temp_size);
+
+    // If active set is emmpty, then only intercept model has
+    // dof 1.
+    if(temp_size == 0) {
+      ans(i) = 1;
+    } else {
+      double temp_norm = norm(temp_beta);
+      inner_mat = inner_mat +
+        temp_wgt(0) * (eye<mat>(temp_size, temp_size)/temp_norm -
+        (temp_beta * temp_beta.t())/pow(temp_norm, 3.0));
+
+      // Inner loop for evaluating the inner matrix.
+      for(int j = 0; j < temp_size - 1; ++j) {
+        arma::vec temp_beta2 = temp_beta;
+        temp_beta2.subvec(0, j).fill(0);
+
+        arma::vec temp_ones(temp_size, fill::ones);
+        temp_ones.subvec(0, j).fill(0);
+        temp_norm = norm(temp_beta2);
+
+        inner_mat = inner_mat +
+          temp_wgt(j + 1) * (diagmat(temp_ones)/temp_norm -
+          (temp_beta2 * temp_beta2.t())/pow(temp_norm, 3.0));
+      }
+
+      arma::mat temp_ones = ones(n, n)/n;
+      arma::mat temp_final = temp_ones +
+        temp_xmat * inv(inner_mat) * (temp_xmat.t() * (eye<mat>(n, n)/n - temp_ones/n));
+
+      ans(i) = trace(temp_final);
+    }
+  }
+  return ans;
+}
+
+
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
 arma::vec innerLoop(arma::vec resp,
@@ -363,6 +471,10 @@ List solveHierLogistic(arma::mat design_mat,
                       Named("fitted") = fit_prob);
 
 }
+
+
+
+
 
 
 

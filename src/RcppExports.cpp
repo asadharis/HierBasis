@@ -44,6 +44,37 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// getInnerMat
+arma::mat getInnerMat(arma::vec beta, arma::vec wgts, int J, int p);
+RcppExport SEXP HierBasis_getInnerMat(SEXP betaSEXP, SEXP wgtsSEXP, SEXP JSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::vec >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type wgts(wgtsSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    __result = Rcpp::wrap(getInnerMat(beta, wgts, J, p));
+    return __result;
+END_RCPP
+}
+// getDofAdditive
+arma::vec getDofAdditive(NumericVector x, arma::mat weights, arma::mat beta, int nlam, int n, int J, int p);
+RcppExport SEXP HierBasis_getDofAdditive(SEXP xSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP, SEXP JSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    __result = Rcpp::wrap(getDofAdditive(x, weights, beta, nlam, n, J, p));
+    return __result;
+END_RCPP
+}
 // FitAdditiveLogistic2
 List FitAdditiveLogistic2(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, double ybar, int nlam, double max_iter, bool beta_is_zero, double step_size, double lineSrch_alpha, bool use_act_set, bool fista);
 RcppExport SEXP HierBasis_FitAdditiveLogistic2(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP ybarSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP step_sizeSEXP, SEXP lineSrch_alphaSEXP, SEXP use_act_setSEXP, SEXP fistaSEXP) {
@@ -102,6 +133,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
     Rcpp::traits::input_parameter< double >::type max_lambda(max_lambdaSEXP);
     __result = Rcpp::wrap(solveHierBasis(design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda));
+    return __result;
+END_RCPP
+}
+// getDof
+arma::vec getDof(arma::mat design_mat, arma::mat weights, arma::sp_mat beta, int nlam, int n);
+RcppExport SEXP HierBasis_getDof(SEXP design_matSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::mat >::type design_mat(design_matSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< arma::sp_mat >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    __result = Rcpp::wrap(getDof(design_mat, weights, beta, nlam, n));
     return __result;
 END_RCPP
 }

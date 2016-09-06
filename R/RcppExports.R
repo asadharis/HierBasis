@@ -9,6 +9,14 @@ FitAdditive <- function(y, weights, ak, x, beta, max_lambda, lam_min_ratio, alph
     .Call('HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set)
 }
 
+getInnerMat <- function(beta, wgts, J, p) {
+    .Call('HierBasis_getInnerMat', PACKAGE = 'HierBasis', beta, wgts, J, p)
+}
+
+getDofAdditive <- function(x, weights, beta, nlam, n, J, p) {
+    .Call('HierBasis_getDofAdditive', PACKAGE = 'HierBasis', x, weights, beta, nlam, n, J, p)
+}
+
 FitAdditiveLogistic2 <- function(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha, use_act_set, fista) {
     .Call('HierBasis_FitAdditiveLogistic2', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha, use_act_set, fista)
 }
@@ -19,6 +27,10 @@ GetProx <- function(y, weights) {
 
 solveHierBasis <- function(design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda) {
     .Call('HierBasis_solveHierBasis', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda)
+}
+
+getDof <- function(design_mat, weights, beta, nlam, n) {
+    .Call('HierBasis_getDof', PACKAGE = 'HierBasis', design_mat, weights, beta, nlam, n)
 }
 
 innerLoop <- function(resp, beta, intercept, tol, max_iter, x_mat, n, weights) {

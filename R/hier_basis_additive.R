@@ -132,7 +132,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
   p <- ncol(x)
   J <- nbasis
 
-  if(type == "binomial") {
+  if(type[1] == "binomial") {
     if(!all(sort(unique(y)) == c(0,1))){
       stop("The response for logistic regression must be a 0,1 vector")
     }
@@ -145,7 +145,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
   }
   if(is.null(intercept)) {
     intercept <- 0
-    if(type == "binomial") {
+    if(type[1] == "binomial") {
       intercept <- log(mean(y)/(1 - mean(y)))
     }
   }
@@ -214,44 +214,15 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                    "xbar" = xbar,
                    "lam" = mod$lambdas,
                    "m.const" = m.const,
-                   "type" = "gaussian")
+                   "type" = "gaussian",
+                   "alpha" = alpha)
+    result$beta.ortho <- mod$.beta.ortho
     result$call <- match.call()
 
     class(result) <- "addHierBasis"
 
   } else {
 
-#     if(is.na(max.lambda)) {
-#       #print("IS NULL HERES")
-#       # Obtain proportion of y with status 1.
-#       mu <- mean(y)
-#       # Obtain mean of the columns of the FULL n*(pJ) design matrix.
-#       # We can actually keep things in our array notation
-#       xbar.full <- apply(design.array, c(2,3), mean)
-#
-#       # We now obtain the means of the columns of the design matrix
-#       # with only the rows for which (y==1).
-#       xbar.ones <- apply(design.array[which(y == 1), , ], c(2,3), mean)
-#
-#       # Finally this expression gives us the derivative of the logistic loss
-#       # at beta = 0
-#       tempv <- mu * (xbar.full - xbar.ones)
-#
-#       # Now we calculate the max lambda to get a zero beta
-#       lam.max <- apply(tempv, 2, function(x) {
-#         if(is.na(alpha)) {
-#           temp <- sqrt(abs(x)/ak)
-#           temp[1] <- 0.5 * (sqrt(4 * abs(x[1]) + 1) - 1);
-#         } else {
-#           temp <- abs(x)/ (ak * alpha)
-#           temp[1] <- abs(x[1])
-#         }
-#         max(temp)
-#         })
-#
-#       max.lambda <- max(lam.max)
-#       #stop("Max lambda value needs to be specified for logistic regression.")
-#     }
 
     # We need to re-label the response as (-1, 1)
     tempy <- y
@@ -291,7 +262,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                    "m.const" = m.const,
                    "type" = "binomial",
                    "iterations" = mod$iters,
-                   "objective" = mod$objective)
+                   "objective" = mod$objective,
+                   "alpha" = alpha)
     result$call <- match.call()
 
     class(result) <- "addHierBasis"
@@ -504,7 +476,7 @@ predict.addHierBasis <- function(object, new.x = NULL, ...) {
   final.ans <- t(apply(ans, 1, "+", object$intercept))
 
   # If this is a linear model then we are done.
-  if(object$type == "gaussian") {
+  if(object$type[1] == "gaussian") {
     return(final.ans)
   } else {
     1/(1 + exp(-final.ans))
@@ -590,6 +562,51 @@ plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
   plot(lin.inter$x, lin.inter$y, ...)
 
   invisible(lin.inter)
+}
+
+
+
+GetDoF.addHierBasis <- function(object) {
+  # Initialize sample size and some other values.
+  n <- length(object$y)
+  p <- ncol(object$x)
+  J <- object$nbasis
+  m <- object$m.const
+  nlam <- length(object$lam)
+
+
+  ak <- (1:J)^m - (0:(J - 1))^m
+  ak.mat <- matrix(rep(ak, nlam), ncol = nlam)
+
+  if(is.na(object$alpha)) {
+    wgts <- scale(ak.mat, center = FALSE, scale =  1/object$lam^2)
+    wgts[1, ] <- object$lam + wgts[1, ]
+  } else {
+    wgts <- scale(ak.mat, center = FALSE, scale =  1/(object$lam*object$alpha))
+    wgts[1, ] <- object$lam
+  }
+
+
+  # Each slice of array has the orthogonal design for each feature.
+  design.array <- array(NA, dim = c(n, J, p))
+
+  # The matrix of xbar values so we know what values to center by.
+  xbar <- matrix(NA, ncol = p, nrow = J)
+
+
+  for(j in 1:p) {
+    design.mat <- outer(object$x[, j], 1:J, "^")
+    design.mat.centered <- scale(design.mat, scale = FALSE)
+
+    xbar[, j] <- attributes(design.mat.centered)[[2]]
+    design.array[, , j] <- design.mat.centered
+  }
+
+  beta.mat <- object$beta.ortho
+  beta.mat <- apply(beta.mat, 3, as.numeric)
+
+  as.numeric(getDofAdditive(design.array, wgts,
+                            beta.mat, nlam, n, J,p))
 }
 
 

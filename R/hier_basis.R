@@ -53,6 +53,7 @@
 #' \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 #' \item{ybar}{The mean of the vector y.}
 #'
+#'
 #' @export
 #'
 #' @author Asad Haris (\email{aharis@@uw.edu}),
@@ -146,7 +147,9 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     active.set <- colSums((beta.hat2!=0)*1)
 
     # Evaluate the predicted values.
-    y.hat <- apply(design.mat %*% beta.hat2, 1, "+", intercept)
+    y.hat <- apply(result.HierBasis$yhat, 1, "+", ybar)
+
+    #y.hat <- apply(design.mat %*% beta.hat2, 1, "+", intercept)
 
     # Return the object of class HierBasis.
     result <- list()
@@ -161,6 +164,8 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     result$active <- active.set
     result$xbar <- xbar
     result$ybar <- ybar
+    result$dof <- result.HierBasis$dof
+    result$beta.ortho <- result.HierBasis$.beta_ortho
     result$call <- match.call()
     class(result) <- "HierBasis"
   } else {
@@ -310,15 +315,11 @@ predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
 #' Extract Degrees of Freedom
 #'
 #' @param object An object of class \code{HierBasis}
-#' @param lam.index An optional integer specifying the index of the
-#'        lambda value. If \code{lam.index} is \code{NULL} (default)
-#'        then the degrees of freedom are calculated for each lambda value.
 #'
 #' @return
 #'
-#' \item{dof}{A vector of degrees of freedom for a given lambda value, as
-#'             specified by \code{lam.index}. If no index is specified then
-#'             it returns a vector of length \code{object$nlam}.}
+#' \item{dof}{A vector of degrees of freedom for the sequence of lambda values
+#'             used for fitted the HierBasis model.}
 #' @export
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
@@ -352,89 +353,29 @@ predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
 #' }
 #'
 
-GetDoF.HierBasis <- function(object, lam.index = NULL) {
+GetDoF.HierBasis <- function(object) {
   # We begin with evaluating the design matrix as we do in the main function.
 
-  # We first evaluate the sample size.
+  # We first evaluate the sample size and some other
+  # quantities for ease of notation.
   n <- length(object$y)
+  J <- object$nbasis
+  m <- object$m.const
+  nlam <- length(object$lambdas)
 
   # Create simple matrix of polynomial basis.
-  design.mat <- sapply(1:(object$nbasis), function(i) {object$x^i})
+  design.mat <- sapply(1:J, function(i) {object$x^i})
 
   # Obtain the column means.
   xbar <- apply(design.mat, 2, mean)
-  design.mat.centered <- as(scale(design.mat, scale = FALSE), Class = "dgCMatrix")
+  design.mat.centered <- scale(design.mat, scale = FALSE)
 
-  # Finally the QR decomposition.
-  qr.obj <- Matrix::qr(design.mat.centered)
-  x.mat <- Matrix::qr.Q(qr.obj) * sqrt(n)
+  # Generate matrix of weights.
+  ak <- (1:J)^m - (0:(J - 1))^m
+  ak.mat <- matrix(rep(ak, nlam), ncol = nlam)
+  wgts <- scale(ak.mat, center = FALSE, scale = 1/object$lambdas)
 
-  # Get weights ak.
-  m.const <- object$m.const
-  nbasis <- object$nbasis
-  ak <- (1:nbasis)^m.const - (0:(nbasis - 1))^m.const
-
-  # Get the sequence of lambda values.
-  lambdas <- object$lambdas
-
-  # Define a temporary function we'll use:
-  temp.fun <- function(i) {
-    beta <- object$beta[, i]
-
-    if(all(beta == 0)) {
-      return(0)
-    }
-
-    # We first obtain K'.
-    # K' is the number of non-zero elements.
-    K.prime <- max(which(beta != 0))
-
-    # The sub-vector corresponding to the non-zero part of beta.
-    beta.k <- beta[1:K.prime]
-
-    # Now the weights.
-    weights <- (lambdas[i]) * ak
-    weights <- weights[1:K.prime]
-
-    beta.mat <- tcrossprod(beta.k)
-
-    # Identity matrix we use later.
-    iden <- diag(rep(1, K.prime))
-
-
-    # Get norms for each of the cases.
-    norms <- rev(sqrt((cumsum(rev(beta.k^2)))))
-
-    # THe weight which we multiple with the identity matrix.
-    w1 <- weights/norms
-    w2 <- weights/(norms^3)
-
-    inner.mat <- sapply(1:K.prime, function(j) {
-      ans <- w1[j] * iden - w2[j] * beta.mat
-      if(j != 1) {
-        ans[1:(j-1), ] <- 0
-        ans[, 1:(j-1)] <- 0
-      }
-      ans
-    })
-
-
-    if(length(inner.mat) == 1) {
-      res <- x.mat[, 1:K.prime] %*% solve(n + inner.mat) %*% t(x.mat[, 1:K.prime])
-    } else {
-      res <- x.mat[, 1:K.prime] %*% solve(n*diag(rep(1, K.prime)) +
-                                            matrix(apply(inner.mat, 1, sum),
-                                                   ncol = K.prime, nrow = K.prime))
-      res <- res %*% Matrix::t(x.mat[, 1:K.prime])
-
-    }
-    sum(Matrix::diag(res))
-  }
-
-  if(!is.null(lam.index)) {
-    temp.fun(lam.index)
-  } else {
-    sapply(1:length(object$lambdas), FUN = temp.fun)
-  }
+  as.numeric(getDof(design.mat.centered, wgts,
+                    object$beta.ortho, nlam, n))
 
 }

@@ -233,13 +233,167 @@ List FitAdditive(arma::vec y,
   }
 
   return List::create(Named("beta") = beta_final,
-                      Named("lambdas") = lambdas);
+                      Named("lambdas") = lambdas,
+                      Named(".beta.ortho") = beta_ans);
+}
+
+
+mat makeBlockDiag(arma::field<mat> blocks) {
+  int num = blocks.n_rows;
+  // Final matrix to return
+  mat fin;
+
+  for(int i = 0; i < num; ++i) {
+    mat temp_mat = blocks(i, 0);
+
+    mat temp_ans(size(fin) + size(temp_mat), fill::zeros);
+    temp_ans(0, 0, size(fin)) = fin;
+    temp_ans.submat(fin.n_rows, fin.n_cols, temp_ans.n_rows - 1, temp_ans.n_cols - 1) = temp_mat;
+    fin = temp_ans;
+  }
+
+  return fin;
+}
+
+
+// [[Rcpp::export]]
+arma::mat getInnerMat(arma::vec beta, arma::vec wgts, int J, int p) {
+  // Begin by making turning beta into a matrix
+  arma::mat beta_mat = reshape(beta, J, p);
+
+  // Find indices and size of the active set
+  uvec active = find(beta_mat.row(0));
+  int act_size = active.n_elem;
+
+  field<mat> inn_mats(act_size);
+
+  for(int i = 0; i < act_size; ++i) {
+    int index = active(i);
+    arma::mat inner_mat;
+    // Get the vector we are working with.
+    arma::vec temp_beta = beta_mat.col(index);
+
+    temp_beta = temp_beta.elem(find(temp_beta));
+
+    int temp_size = temp_beta.n_elem;
+    double temp_norm = norm(temp_beta);
+    inner_mat = wgts(0) * (eye<mat>(temp_size, temp_size)/temp_norm -
+      (temp_beta * temp_beta.t())/pow(temp_norm, 3.0));
+
+    // Inner loop for evaluating the inner matrix.
+    for(int j = 0; j < temp_size - 1; ++j) {
+      arma::vec temp_beta2 = temp_beta;
+      temp_beta2.subvec(0, j).fill(0);
+
+      arma::vec temp_ones(temp_size, fill::ones);
+      temp_ones.subvec(0, j).fill(0);
+      temp_norm = norm(temp_beta2);
+
+      inner_mat = inner_mat +
+        wgts(j + 1) * (diagmat(temp_ones)/temp_norm -
+        (temp_beta2 * temp_beta2.t())/pow(temp_norm, 3.0));
+    }
+    inn_mats(i, 0) = inner_mat;
+  }
+
+  arma::mat final_ans = makeBlockDiag(inn_mats);
+  return final_ans;
+}
+
+// [[Rcpp::export]]
+arma::vec getDofAdditive(NumericVector x, arma::mat weights,
+                        arma::mat beta, int nlam, int n, int J, int p) {
+  // This function returns the dof of the fitted models for univariate
+  // HierBasis.
+  //
+  // Args:
+  //    x: An array of the design matric of size n * J * p, where J is number of
+  //                basis functions and p is number of features.
+  //    weights: The matrix of weights for the hierBasis penalty.
+  //    beta: The solutions to the algorithm, this is not the beta on the original
+  //          scale. To obtain beta on the original scale we would need to do R^{-1} beta.
+  //    nlam: Number of lambda values.
+  //    J: Number of basis functions.
+  //    p: Number fo features.
+  // Returns:
+  //    ans: Vector of dof of size nlam.
+
+
+  // Initialize some objects.
+  IntegerVector dimX = x.attr("dim");
+  arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
+  arma::cube x_mats(n, J, p);
+  arma::cube r_mats(J, J, p);
+  arma::vec max_lam_values(p);
+
+
+  // This loop does the QR decompositon and generates the Q, R matrices.
+  // It also helps us find the maximum lambda value when it is not specified.
+  for(int i = 0; i < p; ++i) {
+    arma::mat temp_x_mat, temp_r_mat;
+
+    // Perform an 'economial' QR decomposition.
+    arma::qr_econ(temp_x_mat, temp_r_mat, X.slice(i));
+
+
+    // Generate the x_mat and the r_mat.
+    temp_x_mat = temp_x_mat * sqrt(n);
+    temp_r_mat = temp_r_mat / sqrt(n);
+
+    x_mats.slice(i) = temp_x_mat;
+    r_mats.slice(i) = temp_r_mat;
+
+  }
+
+  // Initialize the vector for storing the dof for
+  // each lambda value.
+  arma::vec ans(nlam, fill::zeros);
+
+  // We then convert sparse_matrix to matrix for calculations.
+  arma::mat full_beta(beta);
+  arma::mat full_xmat = reshape(x_mats, n, p * J, 1);
+
+  // Begin loop for each value of lambda we calculate the DOF
+  for(int i = 0; i < nlam; ++i) {
+
+    // Fisrst we take the subvector of beta.
+    arma::vec temp_beta = full_beta.col(i);
+    arma::uvec ind_active = find(temp_beta);
+
+    // Then the submatrix of x_mat.
+    arma::mat temp_xmat = full_xmat.cols(ind_active);
+
+
+    // Finally the vector of weights
+    arma::vec temp_wgt = weights.col(i);
+
+    int temp_size = temp_beta.n_elem;
+
+    arma::mat inner_mat;
+    // If active set is emmpty, then only intercept model has
+    // dof 1.
+    if(temp_size == 0) {
+      ans(i) = 1;
+    } else {
+      // Obtain the inner matrix.
+      inner_mat  = getInnerMat(temp_beta, temp_wgt, J, p);
+      inner_mat = inner_mat + (temp_xmat.t() * (temp_xmat/n));
+    }
+
+      arma::mat temp_ones = ones(n, n)/n;
+      arma::mat temp_final = temp_xmat * inv(inner_mat) *
+        (temp_xmat.t() * (eye<mat>(n, n)/n - temp_ones/n));
+
+      ans(i) = trace(temp_final) + 1;
+  }
+  return ans;
 }
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////
-// Begin work on prox grad
+// Begin work on proximal gradient descent.
 ///////////////////////////////////////////////////////////////////////////
 
 
