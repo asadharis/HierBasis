@@ -4,19 +4,14 @@
 \alias{GetDoF.HierBasis}
 \title{Extract Degrees of Freedom}
 \usage{
-GetDoF.HierBasis(object, lam.index = NULL)
+GetDoF.HierBasis(object)
 }
 \arguments{
 \item{object}{An object of class \code{HierBasis}}
-
-\item{lam.index}{An optional integer specifying the index of the
-lambda value. If \code{lam.index} is \code{NULL} (default)
-then the degrees of freedom are calculated for each lambda value.}
 }
 \value{
-\item{dof}{A vector of degrees of freedom for a given lambda value, as
-            specified by \code{lam.index}. If no index is specified then
-            it returns a vector of length \code{object$nlam}.}
+\item{dof}{A vector of degrees of freedom for the sequence of lambda values
+            used for fitted the HierBasis model.}
 }
 \description{
 Extract Degrees of Freedom

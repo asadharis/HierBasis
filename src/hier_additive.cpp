@@ -91,13 +91,16 @@ List FitAdditive(arma::vec y,
         // lambda^2 + lambda >= |v_1|.
         temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(v_temp(0)) + 1) - 1);
         max_lam_values(i) = max(temp_lam_max);
+      } else if(alpha == 0) {
+        // This is the case of our method reducing to SPAM.
+        // I.e. only a group lasso penalty on all the coefficients.
+        max_lam_values(i) =  norm(v_temp);
       } else {
         arma::vec temp_lam_max =  abs(v_temp)/ (ak * alpha);
 
         temp_lam_max(0) = fabs(v_temp(0));
         max_lam_values(i) = max(temp_lam_max);
       }
-
     }
   }
 
