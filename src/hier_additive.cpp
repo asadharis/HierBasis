@@ -95,6 +95,10 @@ List FitAdditive(arma::vec y,
         // This is the case of our method reducing to SPAM.
         // I.e. only a group lasso penalty on all the coefficients.
         max_lam_values(i) =  norm(v_temp);
+      } else if(alpha == -1) {
+        // This corresponds to the case where we have the penalty
+        // lambda *|f| + lambda * P(f), instead of lambda and lambda^2.
+        max_lam_values(i) =  norm(v_temp)/2;
       } else {
         arma::vec temp_lam_max =  abs(v_temp)/ (ak * alpha);
 
@@ -115,12 +119,15 @@ List FitAdditive(arma::vec y,
   lambdas = exp10(lambdas);
 
   // Generate matrix of weights.
-  if(!R_IsNA(alpha)) {
-    weights.each_row() %= alpha * lambdas.t();
-    weights.row(0) = weights.row(0) + (1 - alpha) * lambdas.t();
-  } else {
+  if(R_IsNA(alpha)) {
     weights.each_row() %= pow(lambdas.t(), 2);
     weights.row(0) = weights.row(0) + lambdas.t();
+  } else if(alpha == -1) {
+    weights.each_row() %= pow(lambdas.t(), 1);
+    weights.row(0) = weights.row(0) + lambdas.t();
+  } else {
+    weights.each_row() %= alpha * lambdas.t();
+    weights.row(0) = weights.row(0) + (1 - alpha) * lambdas.t();
   }
 
 
