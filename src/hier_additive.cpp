@@ -591,7 +591,7 @@ List FitAdditiveLogistic2(arma::vec y,
   // If alpha is NULL then we select the theoretically optimal lambda weights.
   if(!R_IsNA(alpha)) {
     weights.each_row() %= alpha * lambdas.t();
-    weights.row(0) = weights.row(0) + (1 - alpha) * lambdas.t();
+    weights.row(0) = weights.row(0) + lambdas.t();
   } else {
     weights.each_row() %= pow(lambdas.t(), 2);
     weights.row(0) = weights.row(0) + lambdas.t();
