@@ -9,7 +9,7 @@
 #' minimizing the following function of \eqn{\beta}:
 #' \deqn{minimize_{\beta_1,\ldots, \beta_p}
 #' (1/2n)||y - \sum \Psi_l \beta_l||^2 +
-#' \sum (1 - \alpha) || \beta_l ||_2 + \alpha \Omega_m( \beta_l )  ,}
+#' \sum \lambda || \beta_l ||_2 + \lambda\alpha \Omega_m( \beta_l )  ,}
 #' where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis} and the summation is
 #' over the index \eqn{l}.
 #' The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
@@ -28,8 +28,10 @@
 #' @param beta.mat An initial estimate of the parameter beta, a
 #' \code{ncol(x)}-by-\code{nbasis} matrix. If NULL (default), the inital estimate
 #' is the zero matrix.
-#' @param alpha The scaler between 0 and 1 controlling the balance between
-#' the sparsity penalty and the hierarchical penalty. Default is 0.5.
+#' @param alpha The scaler tuning parameter controlling the additional smoothness.
+#'  The default is \code{NULL}, which uses the parametrization \eqn{\alpha = \lambda} of
+#'  of Meier et. al. (2009). We recommend using \eqn{\alpha = 1/(2m)} where \eqn{m}
+#'  is the parameter \code{m.const}.
 #' @param m.const The order of smoothness, usually not more than 3 (default).
 #' @param max.iter Maximum number of iterations for block coordinate descent.
 #' @param tol Tolerance for block coordinate descent, stopping precision.
@@ -70,6 +72,10 @@
 #' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
+#'
+#' Meier, L., Van de Geer, S., and Buhlmann, P. (2009).
+#' High-dimensional additive modeling.
+#' The Annals of Statistics 37.6B (2009): 3779-3821.
 #'
 #' @seealso \code{\link{predict.addHierBasis}}, \code{\link{plot.addHierBasis}}
 #'
