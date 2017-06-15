@@ -107,7 +107,8 @@ List solveHierBasis(arma::mat design_mat,
   // We evaluate a max_lambda value if not specified by user.
   if(R_IsNA(max_lambda)) {
     // Followed by the maximum lambda value.
-    max_lambda = max(abs(v_temp) / ak);
+     max_lambda = max(abs(v_temp) / ak);
+    // max_lambda = norm(v_temp, 2);
   }
 
   // Generate the full lambda sequence.

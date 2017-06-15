@@ -174,7 +174,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
     if(type[1] == "gaussian") {
       design.mat.centered <- scale(design.mat, scale = FALSE)
 
-      xbar[, j] <- attributes(design.mat.centered)[[2]]
+      xbar[, j] <- attributes(design.mat.centered)$`scaled:center`
       design.array[, , j] <- design.mat.centered
     } else {
       design.array[, , j] <- design.mat
@@ -197,7 +197,8 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                        max_lambda = max.lambda, lam_min_ratio = lam.min.ratio,
                        alpha = alpha, tol = tol,
                        p, J, n, nlam, max_iter = max.iter,
-                       beta_is_zero = beta_is_zero, active_set = colSums((beta.mat!=0)*1))
+                       beta_is_zero = beta_is_zero, active_set = colSums((beta.mat!=0)*1),
+                       m = m.const)
 
     beta2 <-mod$beta
 

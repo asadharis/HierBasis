@@ -52,7 +52,8 @@ List FitAdditive(arma::vec y,
                  double alpha,
                  double tol, int p, int J, int n,
                  int nlam, double max_iter,
-                 bool beta_is_zero, arma::vec active_set) {
+                 bool beta_is_zero, arma::vec active_set,
+                 double m = 1.0) {
 
   // Initialize some objects.
   IntegerVector dimX = x.attr("dim");
@@ -95,6 +96,9 @@ List FitAdditive(arma::vec y,
         // This is the case of our method reducing to SPAM.
         // I.e. only a group lasso penalty on all the coefficients.
         max_lam_values(i) =  norm(v_temp);
+      } else if(alpha == -1) {
+        // This is a special case for testing only!
+        max_lam_values(i) =  norm(v_temp);
       } else {
         arma::vec temp_lam_max =  abs(v_temp)/ (ak * alpha);
 
@@ -117,6 +121,9 @@ List FitAdditive(arma::vec y,
   // Generate matrix of weights.
   if(R_IsNA(alpha)) {
     weights.each_row() %= pow(lambdas.t(), 2);
+    weights.row(0) = weights.row(0) + lambdas.t();
+  } else if(alpha == -1) {
+    weights.each_row() %= (1/(2*m)) * pow(lambdas.t(), -2 * m + 1) * pow(n, -1 * m);
     weights.row(0) = weights.row(0) + lambdas.t();
   } else {
     weights.each_row() %= alpha * lambdas.t();
