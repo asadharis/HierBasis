@@ -193,3 +193,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+
+static const R_CallMethodDef CallEntries[] = {
+    {"HierBasis_GetProxOne", (DL_FUNC) &HierBasis_GetProxOne, 2},
+    {"HierBasis_FitAdditive", (DL_FUNC) &HierBasis_FitAdditive, 17},
+    {"HierBasis_getInnerMat", (DL_FUNC) &HierBasis_getInnerMat, 4},
+    {"HierBasis_getDofAdditive", (DL_FUNC) &HierBasis_getDofAdditive, 7},
+    {"HierBasis_FitAdditiveLogistic2", (DL_FUNC) &HierBasis_FitAdditiveLogistic2, 21},
+    {"HierBasis_GetProx", (DL_FUNC) &HierBasis_GetProx, 2},
+    {"HierBasis_solveHierBasis", (DL_FUNC) &HierBasis_solveHierBasis, 8},
+    {"HierBasis_getDof", (DL_FUNC) &HierBasis_getDof, 5},
+    {"HierBasis_innerLoop", (DL_FUNC) &HierBasis_innerLoop, 8},
+    {"HierBasis_solveHierLogistic", (DL_FUNC) &HierBasis_solveHierLogistic, 13},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_HierBasis(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}

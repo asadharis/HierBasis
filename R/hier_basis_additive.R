@@ -200,7 +200,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                        beta_is_zero = beta_is_zero, active_set = colSums((beta.mat!=0)*1),
                        m = m.const)
 
-    beta2 <-mod$beta
+    beta2 <- mod$beta
 
     # Obtain intercepts for model.
     intercept <- as.vector(ybar - (as.vector(xbar) %*% beta2))
@@ -605,7 +605,7 @@ GetDoF.addHierBasis <- function(object) {
     design.mat <- outer(object$x[, j], 1:J, "^")
     design.mat.centered <- scale(design.mat, scale = FALSE)
 
-    xbar[, j] <- attributes(design.mat.centered)[[2]]
+    xbar[, j] <- attributes(design.mat.centered)$`scaled:center`
     design.array[, , j] <- design.mat.centered
   }
 
