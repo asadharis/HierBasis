@@ -127,7 +127,7 @@ List FitAdditive(arma::vec y,
     weights.row(0) = weights.row(0) + lambdas.t();
   } else {
     weights.each_row() %= alpha * lambdas.t();
-    weights.row(0) = weights.row(0) + lambdas.t();
+    weights.row(0) = weights.row(0) + (1-alpha)*lambdas.t();
   }
 
 
@@ -232,6 +232,7 @@ List FitAdditive(arma::vec y,
     }
   }
 
+  arma::cube beta_ortho = cube(beta_ans.memptr(), J, p, nlam, true);
   arma::sp_mat beta_final(p * J, nlam);
   for(int i = 0; i < p; i++) {
     arma::mat temp_slice = beta_ans.tube(0, i, J-1, i);
@@ -244,8 +245,50 @@ List FitAdditive(arma::vec y,
 
   return List::create(Named("beta") = beta_final,
                       Named("lambdas") = lambdas,
-                      Named(".beta.ortho") = beta_ans);
+                      Named(".beta.ortho") = beta_ortho);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+// [[Rcpp::export]]
+arma::mat reFitAdditive(arma::vec y,
+                   NumericVector x,
+                   arma::mat beta,
+                   int p, int nlam, int J) {
+
+  // Initialize the cubes for storing design matrix and
+  // then concatenate it into a big design matrix.
+  IntegerVector dimX = x.attr("dim");
+  arma::cube X(x.begin(), dimX[0], dimX[1], dimX[2]);
+
+  arma::mat x_mat = X.slice(0);
+  for(int i = 1; i < p; i++) {
+    x_mat = join_rows(x_mat, X.slice(i));
+  }
+
+  arma::uvec solo(1);
+
+  // Initialize ans matrix to store re-fitted values.
+  arma::mat ans_beta(p*J, nlam, fill::zeros);
+
+  for(int i = 0; i < nlam; i++) {
+    arma::vec temp = beta.col(i);
+    arma::uvec inds = find(temp);
+    if(inds.n_elem > 0){
+      arma::vec temp_beta = solve(x_mat.cols(inds), y);
+
+      solo(0) = i;
+
+      ans_beta(inds, solo) = temp_beta;
+    }
+  }
+
+  return ans_beta;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 mat makeBlockDiag(arma::field<mat> blocks) {
@@ -264,6 +307,8 @@ mat makeBlockDiag(arma::field<mat> blocks) {
 
   return fin;
 }
+
+
 
 
 // [[Rcpp::export]]
@@ -575,13 +620,23 @@ List FitAdditiveLogistic2(arma::vec y,
         // This is obtained by solving the inequality
         // lambda^2 + lambda >= |v_1|.
         temp_lam_max(0) = 0.5 * (sqrt(4 * fabs(temp2(0)) + 1) - 1);
-      } else {
+      }  else {
         temp_lam_max =  abs(temp2)/ (ak * alpha);
         temp_lam_max(0) = fabs(temp2(0));
       }
-      max_lam_values(i) = max(temp_lam_max);
+
+      if(alpha == 0) {
+        // This is the case of our method reducing to SPAM.
+        // I.e. only a group lasso penalty on all the coefficients.
+        max_lam_values(i) =  norm(temp2);
+      } else {
+        max_lam_values(i) = max(temp_lam_max);
+      }
+
     }
   }
+
+  // Rcout << max_lam_values << "\n";
 
   if(R_IsNA(max_lambda)) {
     max_lambda = max(max_lam_values);
@@ -598,7 +653,7 @@ List FitAdditiveLogistic2(arma::vec y,
   // If alpha is NULL then we select the theoretically optimal lambda weights.
   if(!R_IsNA(alpha)) {
     weights.each_row() %= alpha * lambdas.t();
-    weights.row(0) = weights.row(0) + lambdas.t();
+    weights.row(0) = weights.row(0) + (1-alpha) * lambdas.t();
   } else {
     weights.each_row() %= pow(lambdas.t(), 2);
     weights.row(0) = weights.row(0) + lambdas.t();

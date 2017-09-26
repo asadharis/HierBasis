@@ -8,7 +8,7 @@ AdditiveHierBasis(x, y, nbasis = 10, max.lambda = NULL,
   lam.min.ratio = 0.01, nlam = 50, beta.mat = NULL, alpha = NULL,
   m.const = 3, max.iter = 100, tol = 1e-04, active.set = TRUE,
   type = c("gaussian", "binomial"), intercept = NULL,
-  line.search.par = 0.5, step.size = 1, use.fista = TRUE)
+  line.search.par = 0.5, step.size = 1, use.fista = TRUE, refit = FALSE)
 }
 \arguments{
 \item{x}{An \eqn{n \times p}{n x p} matrix of covariates.}
@@ -54,6 +54,9 @@ within the proximal gradient descent algorithm, this must be within the interval
 
 \item{use.fista}{For using a proximal gradient descent algorithm, this specifies the use
 of accelarated proximal gradient descent.}
+
+\item{refit}{If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
+estimates based on the sparsity pattern.}
 }
 \value{
 An object of class addHierBasis with the following elements:
@@ -71,6 +74,8 @@ used for additive HierBasis.}
 \item{xbar}{The \code{nbasis} \eqn{\times}{x} \code{p} matrix of means
 of the full design matrix.}
 \item{ybar}{The mean of the vector y.}
+\item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+                 \code{redit == TRUE}.}
 }
 \description{
 The main function for fitting sparse additive models via the additive
@@ -82,8 +87,12 @@ fits an additive nonparametric regression model. This is achieved by
 minimizing the following function of \eqn{\beta}:
 \deqn{minimize_{\beta_1,\ldots, \beta_p}
 (1/2n)||y - \sum \Psi_l \beta_l||^2 +
-\sum \lambda || \beta_l ||_2 + \lambda\alpha \Omega_m( \beta_l )  ,}
-where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis} and the summation is
+\sum (1-\alpha)\lambda || \beta_l ||_2 + \lambda\alpha \Omega_m( \beta_l )  ,}
+when \eqn{\alpha} is non-null and
+\deqn{minimize_{\beta_1,\ldots, \beta_p}
+(1/2n)||y - \sum \Psi_l \beta_l||^2 +
+\sum \lambda || \beta_l ||_2 + \lambda^2 \Omega_m( \beta_l )  ,}
+when \eqn{\alpha} is \code{NULL}, where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis} and the summation is
 over the index \eqn{l}.
 The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
 where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta} and the sum is
@@ -137,10 +146,6 @@ legend("topleft", c("Estimated Function", "True Function"),
 
 
 }
-\author{
-Asad Haris (\email{aharis@uw.edu}),
-Ali Shojaie and Noah Simon
-}
 \references{
 Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
@@ -153,4 +158,7 @@ The Annals of Statistics 37.6B (2009): 3779-3821.
 \seealso{
 \code{\link{predict.addHierBasis}}, \code{\link{plot.addHierBasis}}
 }
-
+\author{
+Asad Haris (\email{aharis@uw.edu}),
+Ali Shojaie and Noah Simon
+}

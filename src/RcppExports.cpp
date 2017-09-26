@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // GetProxOne
 arma::vec GetProxOne(arma::vec y, arma::vec weights);
-RcppExport SEXP HierBasis_GetProxOne(SEXP ySEXP, SEXP weightsSEXP) {
+RcppExport SEXP _HierBasis_GetProxOne(SEXP ySEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,7 +20,7 @@ END_RCPP
 }
 // FitAdditive
 List FitAdditive(arma::vec y, arma::mat weights, arma::vec ak, NumericVector x, arma::mat beta, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, int nlam, double max_iter, bool beta_is_zero, arma::vec active_set, double m);
-RcppExport SEXP HierBasis_FitAdditive(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP xSEXP, SEXP betaSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP active_setSEXP, SEXP mSEXP) {
+RcppExport SEXP _HierBasis_FitAdditive(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP xSEXP, SEXP betaSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP active_setSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -45,9 +45,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// reFitAdditive
+arma::mat reFitAdditive(arma::vec y, NumericVector x, arma::mat beta, int p, int nlam, int J);
+RcppExport SEXP _HierBasis_reFitAdditive(SEXP ySEXP, SEXP xSEXP, SEXP betaSEXP, SEXP pSEXP, SEXP nlamSEXP, SEXP JSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    rcpp_result_gen = Rcpp::wrap(reFitAdditive(y, x, beta, p, nlam, J));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getInnerMat
 arma::mat getInnerMat(arma::vec beta, arma::vec wgts, int J, int p);
-RcppExport SEXP HierBasis_getInnerMat(SEXP betaSEXP, SEXP wgtsSEXP, SEXP JSEXP, SEXP pSEXP) {
+RcppExport SEXP _HierBasis_getInnerMat(SEXP betaSEXP, SEXP wgtsSEXP, SEXP JSEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,7 +77,7 @@ END_RCPP
 }
 // getDofAdditive
 arma::vec getDofAdditive(NumericVector x, arma::mat weights, arma::mat beta, int nlam, int n, int J, int p);
-RcppExport SEXP HierBasis_getDofAdditive(SEXP xSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP, SEXP JSEXP, SEXP pSEXP) {
+RcppExport SEXP _HierBasis_getDofAdditive(SEXP xSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP, SEXP JSEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -78,7 +94,7 @@ END_RCPP
 }
 // FitAdditiveLogistic2
 List FitAdditiveLogistic2(arma::vec y, arma::mat weights, arma::vec ak, arma::cube X, arma::mat beta, double intercept, double max_lambda, double lam_min_ratio, double alpha, double tol, int p, int J, int n, double ybar, int nlam, double max_iter, bool beta_is_zero, double step_size, double lineSrch_alpha, bool use_act_set, bool fista);
-RcppExport SEXP HierBasis_FitAdditiveLogistic2(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP ybarSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP step_sizeSEXP, SEXP lineSrch_alphaSEXP, SEXP use_act_setSEXP, SEXP fistaSEXP) {
+RcppExport SEXP _HierBasis_FitAdditiveLogistic2(SEXP ySEXP, SEXP weightsSEXP, SEXP akSEXP, SEXP XSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP alphaSEXP, SEXP tolSEXP, SEXP pSEXP, SEXP JSEXP, SEXP nSEXP, SEXP ybarSEXP, SEXP nlamSEXP, SEXP max_iterSEXP, SEXP beta_is_zeroSEXP, SEXP step_sizeSEXP, SEXP lineSrch_alphaSEXP, SEXP use_act_setSEXP, SEXP fistaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -109,7 +125,7 @@ END_RCPP
 }
 // GetProx
 arma::sp_mat GetProx(arma::vec y, arma::mat weights);
-RcppExport SEXP HierBasis_GetProx(SEXP ySEXP, SEXP weightsSEXP) {
+RcppExport SEXP _HierBasis_GetProx(SEXP ySEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -121,7 +137,7 @@ END_RCPP
 }
 // solveHierBasis
 List solveHierBasis(arma::mat design_mat, arma::vec y, arma::vec ak, arma::mat weights, int n, double lam_min_ratio, int nlam, double max_lambda);
-RcppExport SEXP HierBasis_solveHierBasis(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP lam_min_ratioSEXP, SEXP nlamSEXP, SEXP max_lambdaSEXP) {
+RcppExport SEXP _HierBasis_solveHierBasis(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP lam_min_ratioSEXP, SEXP nlamSEXP, SEXP max_lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -139,7 +155,7 @@ END_RCPP
 }
 // getDof
 arma::vec getDof(arma::mat design_mat, arma::mat weights, arma::sp_mat beta, int nlam, int n);
-RcppExport SEXP HierBasis_getDof(SEXP design_matSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP) {
+RcppExport SEXP _HierBasis_getDof(SEXP design_matSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -154,7 +170,7 @@ END_RCPP
 }
 // innerLoop
 arma::vec innerLoop(arma::vec resp, arma::vec beta, double intercept, double tol, int max_iter, arma::mat x_mat, int n, arma::vec weights);
-RcppExport SEXP HierBasis_innerLoop(SEXP respSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP x_matSEXP, SEXP nSEXP, SEXP weightsSEXP) {
+RcppExport SEXP _HierBasis_innerLoop(SEXP respSEXP, SEXP betaSEXP, SEXP interceptSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP x_matSEXP, SEXP nSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -172,7 +188,7 @@ END_RCPP
 }
 // solveHierLogistic
 List solveHierLogistic(arma::mat design_mat, arma::vec y, arma::vec ak, arma::mat weights, int n, int nlam, int J, double max_lambda, double lam_min_ratio, double tol, int max_iter, double tol_inner, int max_iter_inner);
-RcppExport SEXP HierBasis_solveHierLogistic(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP JSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP tol_innerSEXP, SEXP max_iter_innerSEXP) {
+RcppExport SEXP _HierBasis_solveHierLogistic(SEXP design_matSEXP, SEXP ySEXP, SEXP akSEXP, SEXP weightsSEXP, SEXP nSEXP, SEXP nlamSEXP, SEXP JSEXP, SEXP max_lambdaSEXP, SEXP lam_min_ratioSEXP, SEXP tolSEXP, SEXP max_iterSEXP, SEXP tol_innerSEXP, SEXP max_iter_innerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -195,16 +211,17 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"HierBasis_GetProxOne", (DL_FUNC) &HierBasis_GetProxOne, 2},
-    {"HierBasis_FitAdditive", (DL_FUNC) &HierBasis_FitAdditive, 17},
-    {"HierBasis_getInnerMat", (DL_FUNC) &HierBasis_getInnerMat, 4},
-    {"HierBasis_getDofAdditive", (DL_FUNC) &HierBasis_getDofAdditive, 7},
-    {"HierBasis_FitAdditiveLogistic2", (DL_FUNC) &HierBasis_FitAdditiveLogistic2, 21},
-    {"HierBasis_GetProx", (DL_FUNC) &HierBasis_GetProx, 2},
-    {"HierBasis_solveHierBasis", (DL_FUNC) &HierBasis_solveHierBasis, 8},
-    {"HierBasis_getDof", (DL_FUNC) &HierBasis_getDof, 5},
-    {"HierBasis_innerLoop", (DL_FUNC) &HierBasis_innerLoop, 8},
-    {"HierBasis_solveHierLogistic", (DL_FUNC) &HierBasis_solveHierLogistic, 13},
+    {"_HierBasis_GetProxOne", (DL_FUNC) &_HierBasis_GetProxOne, 2},
+    {"_HierBasis_FitAdditive", (DL_FUNC) &_HierBasis_FitAdditive, 17},
+    {"_HierBasis_reFitAdditive", (DL_FUNC) &_HierBasis_reFitAdditive, 6},
+    {"_HierBasis_getInnerMat", (DL_FUNC) &_HierBasis_getInnerMat, 4},
+    {"_HierBasis_getDofAdditive", (DL_FUNC) &_HierBasis_getDofAdditive, 7},
+    {"_HierBasis_FitAdditiveLogistic2", (DL_FUNC) &_HierBasis_FitAdditiveLogistic2, 21},
+    {"_HierBasis_GetProx", (DL_FUNC) &_HierBasis_GetProx, 2},
+    {"_HierBasis_solveHierBasis", (DL_FUNC) &_HierBasis_solveHierBasis, 8},
+    {"_HierBasis_getDof", (DL_FUNC) &_HierBasis_getDof, 5},
+    {"_HierBasis_innerLoop", (DL_FUNC) &_HierBasis_innerLoop, 8},
+    {"_HierBasis_solveHierLogistic", (DL_FUNC) &_HierBasis_solveHierLogistic, 13},
     {NULL, NULL, 0}
 };
 

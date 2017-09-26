@@ -9,8 +9,12 @@
 #' minimizing the following function of \eqn{\beta}:
 #' \deqn{minimize_{\beta_1,\ldots, \beta_p}
 #' (1/2n)||y - \sum \Psi_l \beta_l||^2 +
-#' \sum \lambda || \beta_l ||_2 + \lambda\alpha \Omega_m( \beta_l )  ,}
-#' where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis} and the summation is
+#' \sum (1-\alpha)\lambda || \beta_l ||_2 + \lambda\alpha \Omega_m( \beta_l )  ,}
+#' when \eqn{\alpha} is non-null and
+#' \deqn{minimize_{\beta_1,\ldots, \beta_p}
+#' (1/2n)||y - \sum \Psi_l \beta_l||^2 +
+#' \sum \lambda || \beta_l ||_2 + \lambda^2 \Omega_m( \beta_l )  ,}
+#' when \eqn{\alpha} is \code{NULL}, where \eqn{\beta_l} is a vector of length \eqn{J = } \code{nbasis} and the summation is
 #' over the index \eqn{l}.
 #' The penalty function \eqn{\Omega_m} is given by \deqn{\sum a_{j,m}\beta[j:J],}
 #' where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta} and the sum is
@@ -46,6 +50,8 @@
 #' @param step.size For logistic regression, an initial step size for the line search algorithm.
 #' @param use.fista For using a proximal gradient descent algorithm, this specifies the use
 #' of accelarated proximal gradient descent.
+#' @param refit If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
+#'              estimates based on the sparsity pattern.
 #'
 #' @return
 #' An object of class addHierBasis with the following elements:
@@ -63,6 +69,8 @@
 #' \item{xbar}{The \code{nbasis} \eqn{\times}{x} \code{p} matrix of means
 #' of the full design matrix.}
 #' \item{ybar}{The mean of the vector y.}
+#' \item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+#'                  \code{redit == TRUE}.}
 #'
 #'
 #' @export
@@ -131,7 +139,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                               type = c("gaussian", "binomial"),
                               intercept = NULL, line.search.par = 0.5,
                               step.size = 1,
-                              use.fista = TRUE) {
+                              use.fista = TRUE, refit = FALSE) {
 
   # Initialize sample size and some other values.
   n <- length(y)
@@ -205,10 +213,19 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
     # Obtain intercepts for model.
     intercept <- as.vector(ybar - (as.vector(xbar) %*% beta2))
 
-
     # Obtain the fitted values for each lambda value.
     yhats <- Matrix::crossprod(apply(design.array, 1, cbind), beta2) + ybar
 
+    # If the function has an option to re-fit based on obtained sparsity pattern
+    # we perform and return the following
+    if(refit == TRUE) {
+      refit.beta <- reFitAdditive(y - mean(y), design.array,
+                                  as.matrix(beta2), p, nlam, J)
+      refit.intercept <- as.vector(ybar - (as.vector(xbar) %*% refit.beta))
+      refit.yhat <- Matrix::crossprod(apply(design.array, 1, cbind), refit.beta) + ybar
+      refit.mod <- list("intercept" = refit.intercept,
+                        "beta" = refit.beta, "yhat" = refit.yhat)
+    }
 
     # Finally, we return an addHierbasis object.
     result <- list("beta" = beta2,
@@ -225,6 +242,9 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
                    "alpha" = alpha)
     result$beta.ortho <- mod$.beta.ortho
     result$call <- match.call()
+    if(refit){
+      result$refit <- refit.mod
+    }
 
     class(result) <- "addHierBasis"
 
@@ -402,6 +422,8 @@ view.model.addHierBasis <- function(object, lam.index = 1, digits = 3) {
 #' @param new.x An optional matrix of values of \code{x} at which to predict.
 #' The number of columns of \code{new.x} should be equal to the number of
 #' columns of \code{object$x}.
+#' @param refit Should predeictions be given based on re-fitted least squares estimates.
+#'              This is only compatible if \code{refit == TRUE} in \code{\link{AdditiveHierBasis}}.
 #' @param ... Not used. Other arguments for predict function.
 #'
 #' @details
@@ -451,7 +473,7 @@ view.model.addHierBasis <- function(object, lam.index = 1, digits = 3) {
 #' # Obtain predictions for new.x.
 #' preds <- predict(mod, new.x = matrix(rnorm(n*p), ncol = p))
 #'
-predict.addHierBasis <- function(object, new.x = NULL, ...) {
+predict.addHierBasis <- function(object, new.x = NULL, refit = FALSE, ...) {
 
   # Initialize some variables.
   if(is.null(new.x)) {
@@ -573,6 +595,45 @@ plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
 
 
 
+#' Degrees of Freedom for Additive HierBasis
+#'
+#' @param object An object of class \code{addHierBasis}.
+#'
+#' @return A numeric vector of degrees of freedom for the sequence of lambda values
+#' @export
+#'
+#' @author Asad Haris (\email{aharis@@uw.edu}),
+#' Ali Shojaie and Noah Simon
+#' @references
+#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
+#' by authors.
+#'
+#' @seealso \code{\link{AdditiveHierBasis}}
+#'
+#' @examples
+#'
+#' library(HierBasis)
+#' require(Matrix)
+#'
+#' set.seed(1)
+#'
+#' # Generate the points x.
+#' n <- 100
+#' p <- 30
+#'
+#' x <- matrix(rnorm(n*p), ncol = p)
+#'
+#' # A simple model with 3 non-zero functions.
+#' y <- rnorm(n, sd = 0.1) + sin(x[, 1]) + x[, 2] + (x[, 3])^3
+#'
+#' mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30,
+#'                          beta.mat = NULL,
+#'                          nlam = 50, alpha = 0.5,
+#'                          lam.min.ratio = 1e-4, m.const = 3,
+#'                          max.iter = 300, tol = 1e-4)
+#' df <- GetDoF.addHierBasis(mod)
+
 GetDoF.addHierBasis <- function(object) {
   # Initialize sample size and some other values.
   n <- length(object$y)
@@ -590,7 +651,7 @@ GetDoF.addHierBasis <- function(object) {
     wgts[1, ] <- object$lam + wgts[1, ]
   } else {
     wgts <- scale(ak.mat, center = FALSE, scale =  1/(object$lam*object$alpha))
-    wgts[1, ] <- object$lam
+    wgts[1, ] <- wgts[1, ] + object$lam*(1-object$alpha)
   }
 
 

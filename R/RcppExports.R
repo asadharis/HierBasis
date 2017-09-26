@@ -2,42 +2,46 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 GetProxOne <- function(y, weights) {
-    .Call('HierBasis_GetProxOne', PACKAGE = 'HierBasis', y, weights)
+    .Call('_HierBasis_GetProxOne', PACKAGE = 'HierBasis', y, weights)
 }
 
 FitAdditive <- function(y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set, m = 1.0) {
-    .Call('HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set, m)
+    .Call('_HierBasis_FitAdditive', PACKAGE = 'HierBasis', y, weights, ak, x, beta, max_lambda, lam_min_ratio, alpha, tol, p, J, n, nlam, max_iter, beta_is_zero, active_set, m)
+}
+
+reFitAdditive <- function(y, x, beta, p, nlam, J) {
+    .Call('_HierBasis_reFitAdditive', PACKAGE = 'HierBasis', y, x, beta, p, nlam, J)
 }
 
 getInnerMat <- function(beta, wgts, J, p) {
-    .Call('HierBasis_getInnerMat', PACKAGE = 'HierBasis', beta, wgts, J, p)
+    .Call('_HierBasis_getInnerMat', PACKAGE = 'HierBasis', beta, wgts, J, p)
 }
 
 getDofAdditive <- function(x, weights, beta, nlam, n, J, p) {
-    .Call('HierBasis_getDofAdditive', PACKAGE = 'HierBasis', x, weights, beta, nlam, n, J, p)
+    .Call('_HierBasis_getDofAdditive', PACKAGE = 'HierBasis', x, weights, beta, nlam, n, J, p)
 }
 
 FitAdditiveLogistic2 <- function(y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha, use_act_set, fista) {
-    .Call('HierBasis_FitAdditiveLogistic2', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha, use_act_set, fista)
+    .Call('_HierBasis_FitAdditiveLogistic2', PACKAGE = 'HierBasis', y, weights, ak, X, beta, intercept, max_lambda, lam_min_ratio, alpha, tol, p, J, n, ybar, nlam, max_iter, beta_is_zero, step_size, lineSrch_alpha, use_act_set, fista)
 }
 
 GetProx <- function(y, weights) {
-    .Call('HierBasis_GetProx', PACKAGE = 'HierBasis', y, weights)
+    .Call('_HierBasis_GetProx', PACKAGE = 'HierBasis', y, weights)
 }
 
 solveHierBasis <- function(design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda) {
-    .Call('HierBasis_solveHierBasis', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda)
+    .Call('_HierBasis_solveHierBasis', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda)
 }
 
 getDof <- function(design_mat, weights, beta, nlam, n) {
-    .Call('HierBasis_getDof', PACKAGE = 'HierBasis', design_mat, weights, beta, nlam, n)
+    .Call('_HierBasis_getDof', PACKAGE = 'HierBasis', design_mat, weights, beta, nlam, n)
 }
 
 innerLoop <- function(resp, beta, intercept, tol, max_iter, x_mat, n, weights) {
-    .Call('HierBasis_innerLoop', PACKAGE = 'HierBasis', resp, beta, intercept, tol, max_iter, x_mat, n, weights)
+    .Call('_HierBasis_innerLoop', PACKAGE = 'HierBasis', resp, beta, intercept, tol, max_iter, x_mat, n, weights)
 }
 
 solveHierLogistic <- function(design_mat, y, ak, weights, n, nlam, J, max_lambda, lam_min_ratio, tol, max_iter, tol_inner, max_iter_inner) {
-    .Call('HierBasis_solveHierLogistic', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, nlam, J, max_lambda, lam_min_ratio, tol, max_iter, tol_inner, max_iter_inner)
+    .Call('_HierBasis_solveHierLogistic', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, nlam, J, max_lambda, lam_min_ratio, tol, max_iter, tol_inner, max_iter_inner)
 }
 

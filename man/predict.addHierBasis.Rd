@@ -4,7 +4,7 @@
 \alias{predict.addHierBasis}
 \title{Model Predictions for Additive HierBasis}
 \usage{
-\method{predict}{addHierBasis}(object, new.x = NULL, ...)
+\method{predict}{addHierBasis}(object, new.x = NULL, refit = FALSE, ...)
 }
 \arguments{
 \item{object}{A fitted object of class '\code{addHierBasis}'.}
@@ -12,6 +12,9 @@
 \item{new.x}{An optional matrix of values of \code{x} at which to predict.
 The number of columns of \code{new.x} should be equal to the number of
 columns of \code{object$x}.}
+
+\item{refit}{Should predeictions be given based on re-fitted least squares estimates.
+This is only compatible if \code{refit == TRUE} in \code{\link{AdditiveHierBasis}}.}
 
 \item{...}{Not used. Other arguments for predict function.}
 }
@@ -58,10 +61,6 @@ mod <- AdditiveHierBasis(x, y, nbasis = 50, max.lambda = 30,
 preds <- predict(mod, new.x = matrix(rnorm(n*p), ncol = p))
 
 }
-\author{
-Asad Haris (\email{aharis@uw.edu}),
-Ali Shojaie and Noah Simon
-}
 \references{
 Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
@@ -70,4 +69,7 @@ by authors.
 \seealso{
 \code{\link{AdditiveHierBasis}}, \code{\link{plot.addHierBasis}}
 }
-
+\author{
+Asad Haris (\email{aharis@uw.edu}),
+Ali Shojaie and Noah Simon
+}

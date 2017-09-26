@@ -39,10 +39,6 @@ print(mod, lam.index = 30)
 }
 
 }
-\author{
-Asad Haris (\email{aharis@uw.edu}),
-Ali Shojaie and Noah Simon
-}
 \references{
 Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
@@ -52,4 +48,7 @@ by authors.
 \code{\link{AdditiveHierBasis}},
 \code{\link{view.model.addHierBasis}}
 }
-
+\author{
+Asad Haris (\email{aharis@uw.edu}),
+Ali Shojaie and Noah Simon
+}
