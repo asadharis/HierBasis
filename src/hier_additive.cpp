@@ -159,7 +159,7 @@ List FitAdditive(arma::vec y,
 
   // Begin main loop for each value of lambda.
   for(int i = 0; i < nlam; i++) {
-    // Rcout << "nlam: " << i<<"\n";
+    //Rcout << "nlam: " << i<<"\n";
     temp_weights = weights.col(i) ;
     int  counter = 0;
     bool converged_final = false;

@@ -498,11 +498,19 @@ predict.addHierBasis <- function(object, new.x = NULL, refit = FALSE, ...) {
     design.array[, , j] <- design.mat
   }
 
-  # Obtain X %*% beta values.
-  ans <- Matrix::crossprod(apply(design.array, 1, cbind), object$beta)
+  if(refit){
+    # Obtain X %*% beta values.
+    ans <- Matrix::crossprod(apply(design.array, 1, cbind), object$refit$beta)
+    # Add the intercept term.
+    final.ans <- t(apply(ans, 1, "+", object$refit$intercept))
 
-  # Add the intercept term.
-  final.ans <- t(apply(ans, 1, "+", object$intercept))
+  } else {
+    # Obtain X %*% beta values.
+    ans <- Matrix::crossprod(apply(design.array, 1, cbind), object$beta)
+    # Add the intercept term.
+    final.ans <- t(apply(ans, 1, "+", object$intercept))
+
+  }
 
   # If this is a linear model then we are done.
   if(object$type[1] == "gaussian") {
