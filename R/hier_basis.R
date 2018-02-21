@@ -149,8 +149,16 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     # Evaluate the predicted values.
     y.hat <- apply(result.HierBasis$yhat, 1, "+", ybar)
 
-    #y.hat <- apply(design.mat %*% beta.hat2, 1, "+", intercept)
-
+    # If the function has an option to re-fit based on obtained sparsity pattern
+    # we perform and return the following
+    if(refit == TRUE) {
+      refit.beta <- reFitAdditive(y - mean(y), design.mat.centered,
+                                  beta.hat2, nlam, J, n)
+      refit.intercept <- as.vector(ybar - xbar %*% refit.beta)
+      refit.yhat <- Matrix::crossprod(design.mat.centered, refit.beta) + ybar
+      refit.mod <- list("intercept" = refit.intercept,
+                        "beta" = refit.beta, "yhat" = refit.yhat)
+    }
     # Return the object of class HierBasis.
     result <- list()
     result$intercept <- intercept
@@ -167,6 +175,9 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     result$dof <- result.HierBasis$dof
     result$beta.ortho <- result.HierBasis$.beta_ortho
     result$call <- match.call()
+    if(refit){
+      result$refit <- refit.mod
+    }
     class(result) <- "HierBasis"
   } else {
     result.HierBasis <- solveHierLogistic(design.mat, y,

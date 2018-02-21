@@ -51,7 +51,8 @@
 #' @param use.fista For using a proximal gradient descent algorithm, this specifies the use
 #' of accelarated proximal gradient descent.
 #' @param refit If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
-#'              estimates based on the sparsity pattern.
+#'              estimates based on the sparsity pattern. Currently the functionality is
+#'              only available for the least squares loss, i.e. \code{type == "gaussian"}
 #'
 #' @return
 #' An object of class addHierBasis with the following elements:
@@ -70,7 +71,7 @@
 #' of the full design matrix.}
 #' \item{ybar}{The mean of the vector y.}
 #' \item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
-#'                  \code{redit == TRUE}.}
+#'                  \code{refit == TRUE}.}
 #'
 #'
 #' @export
