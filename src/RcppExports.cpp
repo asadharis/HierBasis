@@ -153,6 +153,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// reFitUnivariate
+arma::mat reFitUnivariate(arma::vec y, arma::mat design_mat, arma::mat beta, int nlam, int J, int n);
+RcppExport SEXP _HierBasis_reFitUnivariate(SEXP ySEXP, SEXP design_matSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP JSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type design_mat(design_matSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type nlam(nlamSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(reFitUnivariate(y, design_mat, beta, nlam, J, n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getDof
 arma::vec getDof(arma::mat design_mat, arma::mat weights, arma::sp_mat beta, int nlam, int n);
 RcppExport SEXP _HierBasis_getDof(SEXP design_matSEXP, SEXP weightsSEXP, SEXP betaSEXP, SEXP nlamSEXP, SEXP nSEXP) {
@@ -219,6 +235,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_HierBasis_FitAdditiveLogistic2", (DL_FUNC) &_HierBasis_FitAdditiveLogistic2, 21},
     {"_HierBasis_GetProx", (DL_FUNC) &_HierBasis_GetProx, 2},
     {"_HierBasis_solveHierBasis", (DL_FUNC) &_HierBasis_solveHierBasis, 8},
+    {"_HierBasis_reFitUnivariate", (DL_FUNC) &_HierBasis_reFitUnivariate, 6},
     {"_HierBasis_getDof", (DL_FUNC) &_HierBasis_getDof, 5},
     {"_HierBasis_innerLoop", (DL_FUNC) &_HierBasis_innerLoop, 8},
     {"_HierBasis_solveHierLogistic", (DL_FUNC) &_HierBasis_solveHierLogistic, 13},

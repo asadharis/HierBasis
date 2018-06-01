@@ -150,17 +150,6 @@ arma::mat reFitUnivariate(arma::vec y,
                           arma::mat design_mat,
                           arma::mat beta,
                           int nlam, int J, int n) {
-
-  // Generate the x_mat, this is our orthonormal design matrix.
-  arma::mat x_mat, R_mat;
-  arma::qr_econ(x_mat, R_mat, design_mat);
-
-  x_mat = x_mat * sqrt(n);
-  R_mat  = R_mat / sqrt(n);
-  // arma::sp_mat R_mat2 = sp_mat(R_mat / sqrt(n));
-
-  arma::vec v_temp = x_mat.t() * (y /n);
-
   arma::uvec solo(1);
 
   // Initialize ans matrix to store re-fitted values.
@@ -170,7 +159,7 @@ arma::mat reFitUnivariate(arma::vec y,
     arma::vec temp = beta.col(i);
     arma::uvec inds = find(temp);
     if(inds.n_elem > 0){
-      arma::vec temp_beta = solve(x_mat.cols(inds), y);
+      arma::vec temp_beta = solve(design_mat.cols(inds), y);
 
       solo(0) = i;
       ans_beta(inds, solo) = temp_beta;

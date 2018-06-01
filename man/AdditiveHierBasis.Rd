@@ -56,7 +56,8 @@ within the proximal gradient descent algorithm, this must be within the interval
 of accelarated proximal gradient descent.}
 
 \item{refit}{If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
-estimates based on the sparsity pattern.}
+estimates based on the sparsity pattern. Currently the functionality is
+only available for the least squares loss, i.e. \code{type == "gaussian"}}
 }
 \value{
 An object of class addHierBasis with the following elements:
@@ -75,7 +76,7 @@ used for additive HierBasis.}
 of the full design matrix.}
 \item{ybar}{The mean of the vector y.}
 \item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
-                 \code{redit == TRUE}.}
+                 \code{refit == TRUE}.}
 }
 \description{
 The main function for fitting sparse additive models via the additive

@@ -33,6 +33,10 @@ solveHierBasis <- function(design_mat, y, ak, weights, n, lam_min_ratio, nlam, m
     .Call('_HierBasis_solveHierBasis', PACKAGE = 'HierBasis', design_mat, y, ak, weights, n, lam_min_ratio, nlam, max_lambda)
 }
 
+reFitUnivariate <- function(y, design_mat, beta, nlam, J, n) {
+    .Call('_HierBasis_reFitUnivariate', PACKAGE = 'HierBasis', y, design_mat, beta, nlam, J, n)
+}
+
 getDof <- function(design_mat, weights, beta, nlam, n) {
     .Call('_HierBasis_getDof', PACKAGE = 'HierBasis', design_mat, weights, beta, nlam, n)
 }

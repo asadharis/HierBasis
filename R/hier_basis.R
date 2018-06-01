@@ -37,6 +37,9 @@
 #' @param max.iter.inner Maximum number of iterations for inner loop for
 #' logistic regression.
 #' @param tol.inner Tolerance for convergence of inner loop.
+#' @param refit If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
+#'              estimates based on the sparsity pattern. Currently the functionality is
+#'              only available for the least squares loss, i.e. \code{type == "gaussian"}.
 #'
 #' @return   An object of class HierBasis with the following elements:
 #'
@@ -52,6 +55,8 @@
 #' \item{active}{The vector of length nlam. Giving the size of the active set.}
 #' \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 #' \item{ybar}{The mean of the vector y.}
+#' \item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+#'                  \code{refit == TRUE}.}
 #'
 #'
 #' @export
@@ -108,7 +113,8 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
                      nlam = 50, lam.min.ratio = 1e-4, m.const = 3,
                      type = c("gaussian", "binomial"),
                      max.iter = 100, tol = 1e-3,
-                     max.iter.inner = 100, tol.inner = 1e-3) {
+                     max.iter.inner = 100, tol.inner = 1e-3,
+                     refit = FALSE) {
   # We first evaluate the sample size.
   n <- length(y)
 
@@ -152,10 +158,11 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     # If the function has an option to re-fit based on obtained sparsity pattern
     # we perform and return the following
     if(refit == TRUE) {
-      refit.beta <- reFitAdditive(y - mean(y), design.mat.centered,
-                                  beta.hat2, nlam, J, n)
+      refit.beta <- reFitUnivariate(y - mean(y), design.mat.centered,
+                                  beta.hat2, nlam, nbasis, n)
       refit.intercept <- as.vector(ybar - xbar %*% refit.beta)
-      refit.yhat <- Matrix::crossprod(design.mat.centered, refit.beta) + ybar
+
+      refit.yhat <- design.mat.centered %*% refit.beta + ybar
       refit.mod <- list("intercept" = refit.intercept,
                         "beta" = refit.beta, "yhat" = refit.yhat)
     }
@@ -286,7 +293,8 @@ print.HierBasis <- function(x, digits = 3, ...) {
 #' lines((1:80)/80, predict.poly[,30], col = "red", lwd = 2)
 #' }
 
-predict.HierBasis <- function(object, new.x = NULL, interpolate = FALSE, ...) {
+predict.HierBasis <- function(object, new.x = NULL,
+                              interpolate = FALSE, ...) {
   nlam <- length(object$lambdas)  # Number of lambdas.
 
   if(!interpolate) {

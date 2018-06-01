@@ -6,7 +6,8 @@
 \usage{
 HierBasis(x, y, nbasis = length(y), max.lambda = NULL, nlam = 50,
   lam.min.ratio = 1e-04, m.const = 3, type = c("gaussian", "binomial"),
-  max.iter = 100, tol = 0.001, max.iter.inner = 100, tol.inner = 0.001)
+  max.iter = 100, tol = 0.001, max.iter.inner = 100, tol.inner = 0.001,
+  refit = FALSE)
 }
 \arguments{
 \item{x}{A vector of dependent variables.}
@@ -40,6 +41,10 @@ logistic regression.}
 logistic regression.}
 
 \item{tol.inner}{Tolerance for convergence of inner loop.}
+
+\item{refit}{If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
+estimates based on the sparsity pattern. Currently the functionality is
+only available for the least squares loss, i.e. \code{type == "gaussian"}.}
 }
 \value{
 An object of class HierBasis with the following elements:
@@ -56,6 +61,8 @@ allowed the method to fit.}
 \item{active}{The vector of length nlam. Giving the size of the active set.}
 \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 \item{ybar}{The mean of the vector y.}
+\item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+                 \code{refit == TRUE}.}
 }
 \description{
 The main function for univariate non-parametric regression via the
