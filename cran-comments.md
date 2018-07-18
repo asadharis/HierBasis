@@ -10,11 +10,7 @@ field of the DESCRIPTION file.
 * local ubuntu 16.04 LTS, R 3.4.3 (2017-11-30)
 
 ## R CMD check results
-There were no ERRORs or WARNINGs. 
+==> devtools::check(args = c('--as-cran'))
 
-There was 1 NOTE:
-
-* checking dependencies in R code ... NOTE
-  Namespace in Imports field not imported from: 'R6'
-
-  R6 is a build-time dependency.
+R CMD check results
+0 errors | 0 warnings | 0 notes
