@@ -1,6 +1,8 @@
 useDynLib(HierBasis)
 
 importFrom(Rcpp, evalCpp)
+importFrom(stats, approx)
+importFrom(graphics, plot)
 import(Matrix)
 
 export(HierBasis, AdditiveHierBasis, GetDoF.HierBasis, view.model.addHierBasis, GetDoF.addHierBasis)

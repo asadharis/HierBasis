@@ -24,13 +24,11 @@ AdditiveHierBasis(x, y, nbasis = 10, max.lambda = NULL,
 \item{nlam}{The number of lambda values.}
 
 \item{beta.mat}{An initial estimate of the parameter beta, a
-\code{ncol(x)}-by-\code{nbasis} matrix. If NULL (default), the inital estimate
+\code{ncol(x)}-by-\code{nbasis} matrix. If NULL (default), the initial estimate
 is the zero matrix.}
 
-\item{alpha}{The scaler tuning parameter controlling the additional smoothness.
-The default is \code{NULL}, which uses the parametrization \eqn{\alpha = \lambda} of
-of Meier et. al. (2009). We recommend using \eqn{\alpha = 1/(2m)} where \eqn{m}
-is the parameter \code{m.const}.}
+\item{alpha}{The scalar tuning parameter controlling the additional smoothness, see details.
+The default is \code{NULL}.}
 
 \item{m.const}{The order of smoothness, usually not more than 3 (default).}
 
@@ -40,7 +38,7 @@ is the parameter \code{m.const}.}
 
 \item{active.set}{Specify if the algorithm should use an active set strategy.}
 
-\item{type}{Specifies type of regression, "gaussian" is for linear regression with continous
+\item{type}{Specifies type of regression, "gaussian" is for linear regression with continuous
 response and "binomial" is for logistic regression with binary response.}
 
 \item{intercept}{For logistic regression, this specifies an initial value for
@@ -53,7 +51,7 @@ within the proximal gradient descent algorithm, this must be within the interval
 \item{step.size}{For logistic regression, an initial step size for the line search algorithm.}
 
 \item{use.fista}{For using a proximal gradient descent algorithm, this specifies the use
-of accelarated proximal gradient descent.}
+of accelerated proximal gradient descent.}
 
 \item{refit}{If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
 estimates based on the sparsity pattern. Currently the functionality is
@@ -75,7 +73,7 @@ used for additive HierBasis.}
 \item{xbar}{The \code{nbasis} \eqn{\times}{x} \code{p} matrix of means
 of the full design matrix.}
 \item{ybar}{The mean of the vector y.}
-\item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+\item{refit.mod}{An additional refitted model, including yhat, beta and intercepts. Only if
                  \code{refit == TRUE}.}
 }
 \description{
@@ -100,7 +98,7 @@ where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta} and the sum 
 over the index \eqn{j}.
 Finally, the weights \eqn{a_{j,m}} are given by
 \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
-For details see Haris et al. (2016).
+For details see Haris et al. (2018).
 }
 \examples{
 require(Matrix)
@@ -148,7 +146,7 @@ legend("topleft", c("Estimated Function", "True Function"),
 
 }
 \references{
-Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 by authors.
 

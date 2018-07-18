@@ -11,7 +11,7 @@ GetDoF.HierBasis(object)
 }
 \value{
 \item{dof}{A vector of degrees of freedom for the sequence of lambda values
-            used for fitted the HierBasis model.}
+            used for the fitted HierBasis model.}
 }
 \description{
 Extract Degrees of Freedom
@@ -41,7 +41,7 @@ lines(x, poly.fit$fitted.values[, ind], col = "red", lwd = 2)
 
 }
 \references{
-Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 by authors.
 }

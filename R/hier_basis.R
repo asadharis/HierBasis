@@ -16,7 +16,7 @@
 #' where \eqn{\beta[j:J]} is \code{beta[j:J]} for a vector \code{beta}.
 #' Finally, the weights \eqn{a_{j,m}} are given by
 #' \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
-#' For details see Haris et al. (2016).
+#' For details see Haris et al. (2018).
 #' @param x A vector of dependent variables.
 #' @param y A vector of response values we wish to fit the function to.
 #' @param nbasis The number of basis functions. Default is length(y).
@@ -26,10 +26,10 @@
 #' the mean of \code{y}.
 #' @param nlam Number of lambda values for fitting penalized regression.
 #' The functions uses a sequence of \code{nlam} lambda values on the log-scale
-#' rangeing from \code{max.lambda} to \code{max.lambda * lam.min.ratio}.
+#' ranging from \code{max.lambda} to \code{max.lambda * lam.min.ratio}.
 #' @param lam.min.ratio The ratio of the largest and smallest lambda value.
 #' @param m.const The order of smoothness, usually not more than 3 (default).
-#' @param type Specifies type of regression, "gaussian" is for linear regression with continous
+#' @param type Specifies type of regression, "gaussian" is for linear regression with continuous
 #' response and "binomial" is for logistic regression with binary response.
 #' @param max.iter Maximum number of iterations for outer loop for
 #' logistic regression.
@@ -55,7 +55,7 @@
 #' \item{active}{The vector of length nlam. Giving the size of the active set.}
 #' \item{xbar}{The means of the vectors \code{x, x^2, x^3, ..., x^nbasis}.}
 #' \item{ybar}{The mean of the vector y.}
-#' \item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+#' \item{refit.mod}{An additional refitted model, including yhat, beta and intercepts. Only if
 #'                  \code{refit == TRUE}.}
 #'
 #'
@@ -64,7 +64,7 @@
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -264,7 +264,7 @@ print.HierBasis <- function(x, digits = 3, ...) {
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -338,12 +338,12 @@ predict.HierBasis <- function(object, new.x = NULL,
 #' @return
 #'
 #' \item{dof}{A vector of degrees of freedom for the sequence of lambda values
-#'             used for fitted the HierBasis model.}
+#'             used for the fitted HierBasis model.}
 #' @export
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'

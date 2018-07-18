@@ -21,7 +21,7 @@
 #' over the index \eqn{j}.
 #' Finally, the weights \eqn{a_{j,m}} are given by
 #' \deqn{a_{j,m} = j^m - (j-1)^m,} where \eqn{m} denotes the 'smoothness level'.
-#' For details see Haris et al. (2016).
+#' For details see Haris et al. (2018).
 #'
 #' @param x An \eqn{n \times p}{n x p} matrix of covariates.
 #' @param y The response vector size \eqn{n}.
@@ -30,17 +30,15 @@
 #' @param lam.min.ratio The ratio of smallest and largest lambda values.
 #' @param nlam The number of lambda values.
 #' @param beta.mat An initial estimate of the parameter beta, a
-#' \code{ncol(x)}-by-\code{nbasis} matrix. If NULL (default), the inital estimate
+#' \code{ncol(x)}-by-\code{nbasis} matrix. If NULL (default), the initial estimate
 #' is the zero matrix.
-#' @param alpha The scaler tuning parameter controlling the additional smoothness.
-#'  The default is \code{NULL}, which uses the parametrization \eqn{\alpha = \lambda} of
-#'  of Meier et. al. (2009). We recommend using \eqn{\alpha = 1/(2m)} where \eqn{m}
-#'  is the parameter \code{m.const}.
+#' @param alpha The scalar tuning parameter controlling the additional smoothness, see details.
+#' The default is \code{NULL}.
 #' @param m.const The order of smoothness, usually not more than 3 (default).
 #' @param max.iter Maximum number of iterations for block coordinate descent.
 #' @param tol Tolerance for block coordinate descent, stopping precision.
 #' @param active.set Specify if the algorithm should use an active set strategy.
-#' @param type Specifies type of regression, "gaussian" is for linear regression with continous
+#' @param type Specifies type of regression, "gaussian" is for linear regression with continuous
 #' response and "binomial" is for logistic regression with binary response.
 #' @param intercept For logistic regression, this specifies an initial value for
 #' the intercept. If \code{NULL} (default), then the initial value is the coefficient of
@@ -49,7 +47,7 @@
 #' within the proximal gradient descent algorithm, this must be within the interval \eqn{(0,\, 1)}.
 #' @param step.size For logistic regression, an initial step size for the line search algorithm.
 #' @param use.fista For using a proximal gradient descent algorithm, this specifies the use
-#' of accelarated proximal gradient descent.
+#' of accelerated proximal gradient descent.
 #' @param refit If \code{TRUE}, function returns the re-fitted model, i.e. the least squares
 #'              estimates based on the sparsity pattern. Currently the functionality is
 #'              only available for the least squares loss, i.e. \code{type == "gaussian"}
@@ -70,7 +68,7 @@
 #' \item{xbar}{The \code{nbasis} \eqn{\times}{x} \code{p} matrix of means
 #' of the full design matrix.}
 #' \item{ybar}{The mean of the vector y.}
-#' \item{refit.mod}{An additional refitted model, including yhat, beta and intercpets. Only if
+#' \item{refit.mod}{An additional refitted model, including yhat, beta and intercepts. Only if
 #'                  \code{refit == TRUE}.}
 #'
 #'
@@ -78,7 +76,7 @@
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -312,7 +310,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -371,7 +369,7 @@ print.addHierBasis <- function(x, lam.index = NULL, digits = 3, ...) {
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -423,7 +421,7 @@ view.model.addHierBasis <- function(object, lam.index = 1, digits = 3) {
 #' @param new.x An optional matrix of values of \code{x} at which to predict.
 #' The number of columns of \code{new.x} should be equal to the number of
 #' columns of \code{object$x}.
-#' @param refit Should predeictions be given based on re-fitted least squares estimates.
+#' @param refit Should predictions be given based on re-fitted least squares estimates.
 #'              This is only compatible if \code{refit == TRUE} in \code{\link{AdditiveHierBasis}}.
 #' @param ... Not used. Other arguments for predict function.
 #'
@@ -434,7 +432,7 @@ view.model.addHierBasis <- function(object, lam.index = 1, digits = 3) {
 #'
 #' If \code{new.x == NULL} then this function simply returns
 #' the fitted values of the estimated function at the original x values used for
-#' model fitting. The predicted values are presented for each lambda values.
+#' model fitting. The predicted values are presented for each lambda value.
 #'
 #' @return
 #' \item{fitted.values}{A matrix of fitted values with \code{nrow(new.x)}
@@ -443,7 +441,7 @@ view.model.addHierBasis <- function(object, lam.index = 1, digits = 3) {
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -536,7 +534,7 @@ predict.addHierBasis <- function(object, new.x = NULL, refit = FALSE, ...) {
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'
@@ -614,7 +612,7 @@ plot.addHierBasis <- function(x, ind.func = 1, ind.lam = 1, ...) {
 #' @author Asad Haris (\email{aharis@@uw.edu}),
 #' Ali Shojaie and Noah Simon
 #' @references
-#' Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+#' Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 #' Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 #' by authors.
 #'

@@ -13,7 +13,7 @@
 The number of columns of \code{new.x} should be equal to the number of
 columns of \code{object$x}.}
 
-\item{refit}{Should predeictions be given based on re-fitted least squares estimates.
+\item{refit}{Should predictions be given based on re-fitted least squares estimates.
 This is only compatible if \code{refit == TRUE} in \code{\link{AdditiveHierBasis}}.}
 
 \item{...}{Not used. Other arguments for predict function.}
@@ -33,7 +33,7 @@ used for fitting the original model.
 
 If \code{new.x == NULL} then this function simply returns
 the fitted values of the estimated function at the original x values used for
-model fitting. The predicted values are presented for each lambda values.
+model fitting. The predicted values are presented for each lambda value.
 }
 \examples{
 
@@ -62,7 +62,7 @@ preds <- predict(mod, new.x = matrix(rnorm(n*p), ncol = p))
 
 }
 \references{
-Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 by authors.
 }

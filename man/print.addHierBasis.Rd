@@ -40,7 +40,7 @@ print(mod, lam.index = 30)
 
 }
 \references{
-Haris, A., Shojaie, A. and Simon, N. (2016). Nonparametric Regression with
+Haris, A., Shojaie, A. and Simon, N. (2018). Nonparametric Regression with
 Adaptive Smoothness via a Convex Hierarchical Penalty. Available on request
 by authors.
 }
