@@ -19,7 +19,7 @@ covariates. Each element in the list is a vector of strings showing the polynomi
 representation of each individual component function.
 }
 \examples{
-\dontrun{
+\donttest{
 require(Matrix)
 
 set.seed(1)

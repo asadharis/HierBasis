@@ -47,7 +47,7 @@ lines(xs, sin(xs), type = "l", lwd = 2)
 legend("topleft", c("Estimated Function", "True Function"),
       col = c("red", "black"), lwd = 2, lty = 1)
 
-\dontrun{
+\donttest{
 plot(mod,2,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_2(x)",
   main = "Estimating the Linear function")
 lines(xs, xs, type = "l", lwd = 2)

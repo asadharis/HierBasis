@@ -20,7 +20,7 @@ If NULL then all lambda values are shown.}
 Print the coefficients of fitted models.
 }
 \examples{
-\dontrun{
+\donttest{
 require(Matrix)
 
 set.seed(1)

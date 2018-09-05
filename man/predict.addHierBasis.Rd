@@ -4,7 +4,8 @@
 \alias{predict.addHierBasis}
 \title{Model Predictions for Additive HierBasis}
 \usage{
-\method{predict}{addHierBasis}(object, new.x = NULL, refit = FALSE, ...)
+\method{predict}{addHierBasis}(object, new.x = NULL, refit = FALSE,
+  ...)
 }
 \arguments{
 \item{object}{A fitted object of class '\code{addHierBasis}'.}

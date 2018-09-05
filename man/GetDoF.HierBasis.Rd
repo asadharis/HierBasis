@@ -32,7 +32,7 @@ y1dat <- y1 + rnorm(n, sd = 0.1)
 poly.fit <- HierBasis(x, y1dat)
 dof <- GetDoF.HierBasis(poly.fit)
 
-\dontrun{
+\donttest{
 ind <- which.min(abs(dof - 3))[1]
 plot(x, y1dat, type = "p", ylab = "y1")
 lines(x, y1, lwd = 2)

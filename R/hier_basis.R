@@ -95,7 +95,7 @@
 #' sine.fit <- HierBasis(x, y2dat)
 #' exp.fit  <- HierBasis(x, y3dat)
 #'
-#' \dontrun{
+#' \donttest{
 #' plot(x, y1dat, type = "p", ylab = "y1")
 #' lines(x, y1, lwd = 2)
 #' lines(x, poly.fit$fitted.values[,30], col = "red", lwd = 2)
@@ -287,7 +287,7 @@ print.HierBasis <- function(x, digits = 3, ...) {
 #' poly.fit <- HierBasis(x, y1dat)
 #' predict.poly <- predict(poly.fit, new.x = (1:80)/80)
 #'
-#' \dontrun{
+#' \donttest{
 #' plot(x, y1dat, type = "p", ylab = "y1")
 #' lines(x, y1, lwd = 2)
 #' lines((1:80)/80, predict.poly[,30], col = "red", lwd = 2)
@@ -364,7 +364,7 @@ predict.HierBasis <- function(object, new.x = NULL,
 #' poly.fit <- HierBasis(x, y1dat)
 #' dof <- GetDoF.HierBasis(poly.fit)
 #'
-#' \dontrun{
+#' \donttest{
 #' ind <- which.min(abs(dof - 3))[1]
 #' plot(x, y1dat, type = "p", ylab = "y1")
 #' lines(x, y1, lwd = 2)

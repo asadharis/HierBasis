@@ -320,7 +320,7 @@ AdditiveHierBasis <- function(x, y, nbasis = 10, max.lambda = NULL,
 #' @method print addHierBasis
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' require(Matrix)
 #'
 #' set.seed(1)
@@ -375,7 +375,7 @@ print.addHierBasis <- function(x, lam.index = NULL, digits = 3, ...) {
 #'
 #' @seealso \code{\link{AdditiveHierBasis}}, \code{\link{print.addHierBasis}}
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' require(Matrix)
 #'
 #' set.seed(1)
@@ -567,7 +567,7 @@ predict.addHierBasis <- function(object, new.x = NULL, refit = FALSE, ...) {
 #' legend("topleft", c("Estimated Function", "True Function"),
 #'       col = c("red", "black"), lwd = 2, lty = 1)
 #'
-#' \dontrun{
+#' \donttest{
 #' plot(mod,2,30, type  ="l",col = "red", lwd = 2, xlab = "x", ylab = "f_2(x)",
 #'   main = "Estimating the Linear function")
 #' lines(xs, xs, type = "l", lwd = 2)

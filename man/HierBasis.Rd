@@ -5,9 +5,9 @@
 \title{Nonparametric Regression using Hierarchical Basis Functions}
 \usage{
 HierBasis(x, y, nbasis = length(y), max.lambda = NULL, nlam = 50,
-  lam.min.ratio = 1e-04, m.const = 3, type = c("gaussian", "binomial"),
-  max.iter = 100, tol = 0.001, max.iter.inner = 100, tol.inner = 0.001,
-  refit = FALSE)
+  lam.min.ratio = 1e-04, m.const = 3, type = c("gaussian",
+  "binomial"), max.iter = 100, tol = 0.001, max.iter.inner = 100,
+  tol.inner = 0.001, refit = FALSE)
 }
 \arguments{
 \item{x}{A vector of dependent variables.}
@@ -105,7 +105,7 @@ poly.fit <- HierBasis(x, y1dat)
 sine.fit <- HierBasis(x, y2dat)
 exp.fit  <- HierBasis(x, y3dat)
 
-\dontrun{
+\donttest{
 plot(x, y1dat, type = "p", ylab = "y1")
 lines(x, y1, lwd = 2)
 lines(x, poly.fit$fitted.values[,30], col = "red", lwd = 2)

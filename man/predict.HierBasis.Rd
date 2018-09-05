@@ -4,7 +4,8 @@
 \alias{predict.HierBasis}
 \title{Model Predictions for HierBasis}
 \usage{
-\method{predict}{HierBasis}(object, new.x = NULL, interpolate = FALSE, ...)
+\method{predict}{HierBasis}(object, new.x = NULL, interpolate = FALSE,
+  ...)
 }
 \arguments{
 \item{object}{A fitted object of class '\code{HierBasis}'.}
@@ -59,7 +60,7 @@ y1dat <- y1 + rnorm(n, sd = 0.1)
 poly.fit <- HierBasis(x, y1dat)
 predict.poly <- predict(poly.fit, new.x = (1:80)/80)
 
-\dontrun{
+\donttest{
 plot(x, y1dat, type = "p", ylab = "y1")
 lines(x, y1, lwd = 2)
 lines((1:80)/80, predict.poly[,30], col = "red", lwd = 2)
