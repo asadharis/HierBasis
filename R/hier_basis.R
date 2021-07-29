@@ -143,7 +143,8 @@ HierBasis <- function(x, y, nbasis = length(y), max.lambda = NULL,
     result.HierBasis <- solveHierBasis(design.mat.centered, y.centered,
                                        ak, ak.mat, n, lam.min.ratio, nlam,
                                        max.lambda)
-    beta.hat2 <- result.HierBasis$beta
+    beta.hat2 <- backsolve(result.HierBasis$rmat, result.HierBasis$.beta_ortho)
+    #beta.hat2 <- result.HierBasis$beta
 
 
     # Find the intercepts for each fitted model.

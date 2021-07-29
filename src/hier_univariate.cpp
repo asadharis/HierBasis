@@ -123,8 +123,10 @@ List solveHierBasis(arma::mat design_mat,
   // Obtain beta.hat, solve prox problem.
   arma::sp_mat beta_hat =  GetProx(v_temp, weights);
 
+  ////// REMOVED: BACKSOLVE IN R IS BETTER //////////////////////
   // Take the inverse of the R_mat to obtain solution on the original scale
-  arma::mat beta_hat2 = solve(trimatu(R_mat), mat(beta_hat));
+  // arma::mat beta_hat2 = solve(trimatu(R_mat), mat(beta_hat));
+  ////// REMOVED: BACKSOLVE IN R IS BETTER //////////////////////
 
   ///////////// Removed after version 0.7.1, moved to a different R function.//////////
 
@@ -137,7 +139,7 @@ List solveHierBasis(arma::mat design_mat,
   // Return fitted values.
   arma::mat yhat = x_mat * mat(beta_hat);
 
-  return List::create(Named("beta") = beta_hat2,
+  return List::create(Named("rmat") = R_mat,
                       Named("lambdas") = lambdas,
                       //Named("dof") = dof,
                       Named("yhat") = yhat,
